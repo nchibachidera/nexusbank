@@ -1,0 +1,14 @@
+import React from "react";
+const ExternalTransferPage: React.FC = () => {
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
+        <h1 className="text-3xl font-semibold text-gray-800 mb-6">External Transfer Page</h1>
+        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+          <p className="text-gray-600">Send money to external accounts or recipients here.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default ExternalTransferPage;
