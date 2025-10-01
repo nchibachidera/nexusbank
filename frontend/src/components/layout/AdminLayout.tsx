@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, ReactNode } from 'react'
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
@@ -13,6 +13,7 @@ import {
   BellIcon,
   SearchIcon
 } from 'lucide-react'
+
 type SidebarItemProps = {
   icon: React.ReactNode
   title: string
@@ -20,6 +21,7 @@ type SidebarItemProps = {
   active: boolean
   onClick?: () => void
 }
+
 const SidebarItem: React.FC<SidebarItemProps> = ({
   icon,
   title,
@@ -42,27 +44,38 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     </li>
   )
 }
-const AdminLayout = () => {
+
+// ✅ Added props interface
+type AdminLayoutProps = {
+  children?: ReactNode
+  title?: string
+}
+
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+
   if (!user || user.role !== 'admin') {
     return <Navigate to="/login" replace />
   }
+
   const closeMobileSidebar = () => {
     setIsMobileSidebarOpen(false)
   }
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Mobile sidebar backdrop */}
       {isMobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" 
+        <div
+          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
           onClick={closeMobileSidebar}
         />
       )}
+
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-blue-900 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -75,12 +88,13 @@ const AdminLayout = () => {
               <span className="ml-2 text-xl font-bold text-white">Admin Panel</span>
             </Link>
           </div>
+
           {/* User info */}
           <div className="flex items-center px-6 py-4 border-b border-blue-800">
             <div className="flex-shrink-0">
-              <img 
-                src={user.avatar || "https://via.placeholder.com/40"} 
-                alt={user.name} 
+              <img
+                src={user.avatar || 'https://via.placeholder.com/40'}
+                alt={user.name}
                 className="w-10 h-10 rounded-full"
               />
             </div>
@@ -89,53 +103,55 @@ const AdminLayout = () => {
               <p className="text-sm text-blue-300">{user.email}</p>
             </div>
           </div>
+
           {/* Navigation */}
           <nav className="flex-1 px-2 py-4 overflow-y-auto">
             <ul className="space-y-1">
-              <SidebarItem 
-                icon={<LayoutDashboardIcon size={20} />} 
-                title="Dashboard" 
-                to="/admin" 
+              <SidebarItem
+                icon={<LayoutDashboardIcon size={20} />}
+                title="Dashboard"
+                to="/admin"
                 active={location.pathname === '/admin'}
                 onClick={closeMobileSidebar}
               />
-              <SidebarItem 
-                icon={<UsersIcon size={20} />} 
-                title="User Management" 
-                to="/admin/users" 
+              <SidebarItem
+                icon={<UsersIcon size={20} />}
+                title="User Management"
+                to="/admin/users"
                 active={location.pathname.includes('/admin/users')}
                 onClick={closeMobileSidebar}
               />
-              <SidebarItem 
-                icon={<AlertCircleIcon size={20} />} 
-                title="Transaction Monitoring" 
-                to="/admin/transactions" 
+              <SidebarItem
+                icon={<AlertCircleIcon size={20} />}
+                title="Transaction Monitoring"
+                to="/admin/transactions"
                 active={location.pathname.includes('/admin/transactions')}
                 onClick={closeMobileSidebar}
               />
-              <SidebarItem 
-                icon={<ShieldIcon size={20} />} 
-                title="Fraud Alerts" 
-                to="/admin/alerts" 
+              <SidebarItem
+                icon={<ShieldIcon size={20} />}
+                title="Fraud Alerts"
+                to="/admin/alerts"
                 active={location.pathname === '/admin/alerts'}
                 onClick={closeMobileSidebar}
               />
-              <SidebarItem 
-                icon={<FileTextIcon size={20} />} 
-                title="Audit Logs" 
-                to="/admin/logs" 
+              <SidebarItem
+                icon={<FileTextIcon size={20} />}
+                title="Audit Logs"
+                to="/admin/logs"
                 active={location.pathname === '/admin/logs'}
                 onClick={closeMobileSidebar}
               />
-              <SidebarItem 
-                icon={<SettingsIcon size={20} />} 
-                title="Roles & Permissions" 
-                to="/admin/roles" 
+              <SidebarItem
+                icon={<SettingsIcon size={20} />}
+                title="Roles & Permissions"
+                to="/admin/roles"
                 active={location.pathname === '/admin/roles'}
                 onClick={closeMobileSidebar}
               />
             </ul>
           </nav>
+
           {/* Logout button */}
           <div className="p-4 border-t border-blue-800">
             <button
@@ -148,6 +164,7 @@ const AdminLayout = () => {
           </div>
         </div>
       </aside>
+
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
@@ -175,21 +192,25 @@ const AdminLayout = () => {
             </button>
             <div className="ml-4">
               <button className="flex items-center">
-                <img 
-                  src={user.avatar || "https://via.placeholder.com/40"} 
-                  alt={user.name} 
-                  className="w-8 h-8 rounded-full" 
+                <img
+                  src={user.avatar || 'https://via.placeholder.com/40'}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full"
                 />
               </button>
             </div>
           </div>
         </header>
+
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
+          {children /* ✅ Added so AdminLayout can accept props */}
           <Outlet />
         </main>
       </div>
     </div>
   )
 }
+
 export default AdminLayout
+

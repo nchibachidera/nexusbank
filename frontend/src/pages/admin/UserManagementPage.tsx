@@ -1,9 +1,9 @@
  import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AdminLayout from '../../components/layout/AdminLayout'
-import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card'
-import Button from '../../components/ui/Button'
-import Badge from '../../components/ui/Badge'
+import AdminLayout from '../../components/layout/AdminLayout.tsx'
+import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card.tsx'
+import Button from '../../components/ui/Button.tsx'
+import Badge from '../../components/ui/Badge.tsx'
 import { 
   UserIcon, 
   PlusIcon, 

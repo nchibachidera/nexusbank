@@ -1,4 +1,3 @@
-Footer.tsx"
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { PhoneIcon, MailIcon, MapPinIcon, FacebookIcon, TwitterIcon, InstagramIcon, LinkedinIcon } from 'lucide-react'
