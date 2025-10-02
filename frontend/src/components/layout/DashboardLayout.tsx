@@ -1,5 +1,6 @@
-import React, { useState } from "react"
+import React, { useState, ReactNode } from "react"
 import { Outlet } from "react-router-dom"
+
 import {
   Menu as MenuIcon,
   Bell as BellIcon,
@@ -12,9 +13,10 @@ import {
 
 interface DashboardLayoutProps {
   title?: string
+  children: ReactNode;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -90,7 +92,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title }) => {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <Outlet />
+            {children || <Outlet />}
         </main>
       </div>
     </div>

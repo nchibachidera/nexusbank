@@ -1,4 +1,4 @@
- import React, { useState } from 'react'
+import React, { useState } from 'react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -16,6 +16,7 @@ import {
   RefreshCwIcon,
   LogOutIcon
 } from 'lucide-react'
+
 const SecurityPage: React.FC = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false)
@@ -28,6 +29,7 @@ const SecurityPage: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   })
+
   // Dummy security data
   const securityData = {
     lastLogin: '2023-10-15 09:45 AM',
@@ -38,6 +40,7 @@ const SecurityPage: React.FC = () => {
     passwordLastChanged: '2023-08-20',
     securityScore: 85
   }
+
   // Dummy login history
   const loginHistory = [
     {
@@ -81,6 +84,7 @@ const SecurityPage: React.FC = () => {
       ipAddress: '192.168.3.1'
     }
   ]
+
   // Dummy security alerts
   const securityAlerts = [
     {
@@ -108,6 +112,7 @@ const SecurityPage: React.FC = () => {
       severity: 'low'
     }
   ]
+
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setPasswordForm(prev => ({
@@ -115,8 +120,8 @@ const SecurityPage: React.FC = () => {
       [name]: value
     }))
   }
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+
+  const handlePasswordSubmit = () => {
     setPasswordSuccess(true)
     // Reset form after a delay
     setTimeout(() => {
@@ -129,8 +134,8 @@ const SecurityPage: React.FC = () => {
       })
     }, 3000)
   }
-  const handleTwoFactorSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+
+  const handleTwoFactorSubmit = () => {
     setTwoFactorSuccess(true)
     // Reset after a delay
     setTimeout(() => {
@@ -138,6 +143,7 @@ const SecurityPage: React.FC = () => {
       setShowTwoFactorModal(false)
     }, 3000)
   }
+
   const togglePasswordVisibility = (field: string) => {
     if (field === 'current') {
       setShowCurrentPassword(!showCurrentPassword)
@@ -145,6 +151,7 @@ const SecurityPage: React.FC = () => {
       setShowNewPassword(!showNewPassword)
     }
   }
+
   return (
     <DashboardLayout title="Security Settings">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -298,6 +305,7 @@ const SecurityPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Login History */}
           <Card className="mt-6">
             <CardHeader>
@@ -355,6 +363,7 @@ const SecurityPage: React.FC = () => {
               <Button variant="outline">View Full Login History</Button>
             </CardFooter>
           </Card>
+
           {/* Security Alerts */}
           <Card className="mt-6">
             <CardHeader>
@@ -418,6 +427,7 @@ const SecurityPage: React.FC = () => {
             </CardFooter>
           </Card>
         </div>
+
         <div className="lg:col-span-1">
           {/* Device Management */}
           <Card>
@@ -446,6 +456,7 @@ const SecurityPage: React.FC = () => {
                   </Button>
                 </div>
               </div>
+
               <div className="p-3 border border-gray-200 rounded-md">
                 <div className="flex justify-between items-start">
                   <div className="flex items-start">
@@ -465,6 +476,7 @@ const SecurityPage: React.FC = () => {
                   </Button>
                 </div>
               </div>
+
               <div className="p-3 border border-gray-200 rounded-md">
                 <div className="flex justify-between items-start">
                   <div className="flex items-start">
@@ -491,6 +503,7 @@ const SecurityPage: React.FC = () => {
               </Button>
             </CardFooter>
           </Card>
+
           {/* Privacy Settings */}
           <Card className="mt-6">
             <CardHeader>
@@ -546,6 +559,7 @@ const SecurityPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Security Tips */}
           <Card className="mt-6">
             <CardHeader>
@@ -592,6 +606,7 @@ const SecurityPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
       {/* Change Password Modal */}
       {showPasswordModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -636,7 +651,7 @@ const SecurityPage: React.FC = () => {
                           Change Password
                         </h3>
                         <div className="mt-4">
-                          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                          <form className="space-y-4">
                             <div>
                               <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
                                 Current Password
@@ -743,6 +758,7 @@ const SecurityPage: React.FC = () => {
           </div>
         </div>
       )}
+
       {/* Two-Factor Authentication Modal */}
       {showTwoFactorModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -792,7 +808,7 @@ const SecurityPage: React.FC = () => {
                           </p>
                         </div>
                         <div className="mt-4">
-                          <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
+                          <form className="space-y-4">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-medium text-gray-900">SMS Authentication</p>
@@ -871,6 +887,7 @@ const SecurityPage: React.FC = () => {
     </DashboardLayout>
   )
 }
+
 // Import missing icon
 function InfoIcon(props: any) {
   return (
@@ -890,6 +907,7 @@ function InfoIcon(props: any) {
       <line x1="12" y1="16" x2="12" y2="12" />
       <line x1="12" y1="8" x2="12.01" y2="8" />
     </svg>
-  );
+  )
 }
+
 export default SecurityPage

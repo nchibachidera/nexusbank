@@ -1,4 +1,4 @@
- import React, { useState } from 'react'
+import React, { useState } from 'react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -16,11 +16,13 @@ import {
   InstagramIcon,
   LinkedinIcon
 } from 'lucide-react'
+
 const ReferralsPage: React.FC = () => {
   const [copied, setCopied] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteSuccess, setInviteSuccess] = useState(false)
+
   // Dummy referral data
   const referralData = {
     code: 'FRIEND50',
@@ -32,6 +34,7 @@ const ReferralsPage: React.FC = () => {
     reward: '1,000 points per successful referral',
     friendReward: '$50 welcome bonus'
   }
+
   // Dummy referrals list
   const referrals = [
     {
@@ -75,18 +78,20 @@ const ReferralsPage: React.FC = () => {
       pointsEarned: 0
     }
   ]
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referralData.code)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralData.link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-  const handleInviteSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+
+  const handleInviteSubmit = () => {
     setInviteSuccess(true)
     // Reset form after a delay
     setTimeout(() => {
@@ -95,6 +100,7 @@ const ReferralsPage: React.FC = () => {
       setShowInviteModal(false)
     }, 3000)
   }
+
   return (
     <DashboardLayout title="Referrals">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -189,9 +195,7 @@ const ReferralsPage: React.FC = () => {
                         </li>
                         <li className="flex items-start text-sm">
                           <svg className="h-4 w-4 text-blue-600 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-
-```
-/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                           <span>
                             <strong>No limit:</strong> Refer as many friends as you want
@@ -220,6 +224,7 @@ const ReferralsPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Referrals List */}
           <Card className="mt-6">
             <CardHeader>
@@ -288,6 +293,7 @@ const ReferralsPage: React.FC = () => {
             </CardFooter>
           </Card>
         </div>
+
         <div className="lg:col-span-1">
           {/* How It Works */}
           <Card>
@@ -328,6 +334,7 @@ const ReferralsPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Share on Social */}
           <Card className="mt-6">
             <CardHeader>
@@ -388,6 +395,7 @@ const ReferralsPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Referral FAQ */}
           <Card className="mt-6">
             <CardHeader>
@@ -419,6 +427,7 @@ const ReferralsPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
       {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -463,7 +472,7 @@ const ReferralsPage: React.FC = () => {
                           Invite Friends via Email
                         </h3>
                         <div className="mt-4">
-                          <form onSubmit={handleInviteSubmit}>
+                          <form>
                             <div>
                               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                 Friend's Email Address
@@ -519,6 +528,7 @@ const ReferralsPage: React.FC = () => {
         </div>
       )}
     </DashboardLayout>
-    )
+  )
 }
+
 export default ReferralsPage
