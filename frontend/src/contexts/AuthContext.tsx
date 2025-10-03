@@ -1,21 +1,37 @@
 import React, { createContext, useState, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { loginUser, registerUser } from '../api/authApi' // 👈 make sure this path is correct
+import axios from 'axios'
+
+// User type
 type User = {
   id: string
-  name: string
+  fullName: string
   email: string
-  avatar?: string
-  role: 'user' | 'admin'
+  phone?: string
+  role?: 'user' | 'admin'
 }
+
+// Context type
 type AuthContextType = {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  signup: (data: {
+    fullName: string
+    email: string
+    password: string
+    phone?: string
+    birthday?: string
+  }) => Promise<void>
   logout: () => void
   error: string | null
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
@@ -23,77 +39,90 @@ export const useAuth = () => {
   }
   return context
 }
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  // Check if user is already logged in on mount
+
+  // On mount: check stored user
   useEffect(() => {
-    const checkAuth = async () => {
-      const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        try {
-          // In a real app, validate token with API
-          setUser(JSON.parse(storedUser))
-        } catch (error) {
-          localStorage.removeItem('user')
-        }
-      }
-      setIsLoading(false)
+    const storedUser = localStorage.getItem('user')
+    const storedToken = localStorage.getItem('token')
+
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser))
+      setToken(storedToken)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
     }
-    checkAuth()
   }, [])
+
+  // Login with backend
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     setError(null)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // Mock authentication logic
-      if (email === 'user@example.com' && password === 'password') {
-        const user = {
-          id: '1',
-          name: 'John Doe',
-          email: 'user@example.com',
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-          role: 'user' as const
-        }
-        setUser(user)
-        localStorage.setItem('user', JSON.stringify(user))
-        navigate('/dashboard')
-      } else if (email === 'admin@example.com' && password === 'admin') {
-        const user = {
-          id: '2',
-          name: 'Admin User',
-          email: 'admin@example.com',
-          avatar: 'https://randomuser.me/api/portraits/women/28.jpg',
-          role: 'admin' as const
-        }
-        setUser(user)
-        localStorage.setItem('user', JSON.stringify(user))
-        navigate('/admin')
-      } else {
-        setError('Invalid email or password')
-      }
-    } catch (err) {
-      setError('An error occurred during login')
+      const res = await loginUser({ email, password })
+      const { token, user } = res.data
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
+      setToken(token)
+      setUser(user)
+
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+      navigate('/dashboard')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed')
     } finally {
       setIsLoading(false)
     }
   }
+
+  // Signup
+  const signup = async (data: {
+    fullName: string
+    email: string
+    password: string
+    phone?: string
+    birthday?: string
+  }) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      await registerUser(data)
+      alert('✅ Account created! Please login.')
+      navigate('/login')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Signup failed')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Logout
   const logout = () => {
     setUser(null)
+    setToken(null)
+    localStorage.removeItem('token')
     localStorage.removeItem('user')
+    delete axios.defaults.headers.common['Authorization']
     navigate('/login')
   }
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        token,
         isAuthenticated: !!user,
         isLoading,
         login,
+        signup,
         logout,
         error
       }}
@@ -102,3 +131,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   )
 }
+
