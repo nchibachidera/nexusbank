@@ -1,15 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { loginUser, registerUser } from '../api/authApi' // 👈 make sure this path is correct
+import { loginUser, registerUser } from '../api/authApi'
 import axios from 'axios'
 
-// User type
+// Frontend User type
 type User = {
   id: string
   fullName: string
   email: string
-  phone?: string
-  role?: 'user' | 'admin'
 }
 
 // Context type
@@ -20,11 +18,12 @@ type AuthContextType = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (data: {
-    fullName: string
+    firstName: string
+    lastName: string
     email: string
     password: string
-    phone?: string
-    birthday?: string
+    phoneNumber?: string
+    birthday?: string;
   }) => Promise<void>
   logout: () => void
   error: string | null
@@ -47,7 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  // On mount: check stored user
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
     const storedToken = localStorage.getItem('token')
@@ -59,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [])
 
-  // Login with backend
+  // Login
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     setError(null)
@@ -67,11 +65,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await loginUser({ email, password })
       const { token, user } = res.data
 
+      // Convert API user → frontend User
+      const formattedUser: User = {
+        id: user.id,
+        fullName: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+      }
+
       localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('user', JSON.stringify(formattedUser))
 
       setToken(token)
-      setUser(user)
+      setUser(formattedUser)
 
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
@@ -85,11 +90,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Signup
   const signup = async (data: {
-    fullName: string
+    firstName: string
+    lastName: string
     email: string
     password: string
-    phone?: string
-    birthday?: string
+    phoneNumber?: string
+    birthday?: string;
   }) => {
     setIsLoading(true)
     setError(null)
@@ -131,4 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   )
 }
+
+
+
 
