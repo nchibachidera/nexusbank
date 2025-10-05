@@ -1,6 +1,5 @@
 import React, { useState, ReactNode } from "react"
 import { Outlet } from "react-router-dom"
-
 import {
   Menu as MenuIcon,
   Bell as BellIcon,
@@ -13,7 +12,7 @@ import {
 
 interface DashboardLayoutProps {
   title?: string
-  children: ReactNode;
+  children?: ReactNode // ✅ optional
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) => {
@@ -92,7 +91,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-            {children || <Outlet />}
+          {children || <Outlet />} {/* ✅ supports nested routes */}
         </main>
       </div>
     </div>
@@ -100,4 +99,5 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
 }
 
 export default DashboardLayout
+
 

@@ -1,80 +1,138 @@
-import React, { useState } from 'react'
-import { PlusIcon, PiggyBankIcon, TrendingUpIcon, ArrowRightIcon, EditIcon, TrashIcon } from 'lucide-react'
-import Button from '../../components/Button'
-// Mock data
-const savingsGoals = [
-  {
-    id: '1',
-    name: 'Vacation Fund',
-    targetAmount: 5000,
-    currentAmount: 3000,
-    deadline: '2023-12-31',
-    category: 'Travel',
-    autoSave: true,
-    autoSaveAmount: 200,
-    autoSaveFrequency: 'Monthly',
-    progress: 60
-  },
-  {
-    id: '2',
-    name: 'New Laptop',
-    targetAmount: 2000,
-    currentAmount: 1200,
-    deadline: '2023-09-15',
-    category: 'Electronics',
-    autoSave: true,
-    autoSaveAmount: 150,
-    autoSaveFrequency: 'Monthly',
-    progress: 60
-  },
-  {
-    id: '3',
-    name: 'Emergency Fund',
-    targetAmount: 10000,
-    currentAmount: 4500,
-    deadline: '2024-06-30',
-    category: 'Emergency',
-    autoSave: true,
-    autoSaveAmount: 300,
-    autoSaveFrequency: 'Monthly',
-    progress: 45
-  }
-]
-const SavingsGoalsPage = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+import React, { useState, useEffect } from "react";
+import {
+  PlusIcon,
+  PiggyBankIcon,
+  TrendingUpIcon,
+  EditIcon,
+  TrashIcon,
+} from "lucide-react";
+import Button from "../../components/Button";
+import api from "../../api/api";
+
+interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string | null;
+  category: string;
+  autoSave: boolean;
+  autoSaveAmount?: number;
+  autoSaveFrequency?: string;
+  progress?: number;
+}
+
+const SavingsGoalsPage: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
-    name: '',
-    targetAmount: '',
-    deadline: '',
-    category: 'Travel',
+    name: "",
+    targetAmount: "",
+    deadline: "",
+    category: "Travel",
     autoSave: true,
-    autoSaveAmount: '',
-    autoSaveFrequency: 'Monthly'
-  })
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox' 
-      ? (e.target as HTMLInputElement).checked 
-      : e.target.value
+    autoSaveAmount: "",
+    autoSaveFrequency: "Monthly",
+  });
+
+  // Fetch savings goals
+  useEffect(() => {
+    let mounted = true;
+    const fetchSavings = async () => {
+      try {
+        const res = await api.get<SavingsGoal[]>("/savings");
+        if (!mounted) return;
+        const normalized = res.data.map((g) => ({
+          ...g,
+          targetAmount: Number(g.targetAmount),
+          currentAmount: Number(g.currentAmount ?? 0),
+          autoSaveAmount: g.autoSaveAmount ? Number(g.autoSaveAmount) : 0,
+          progress:
+            typeof g.progress === "number"
+              ? g.progress
+              : Math.round(((Number(g.currentAmount ?? 0) / Number(g.targetAmount || 1)) * 100) || 0),
+        }));
+        setSavingsGoals(normalized);
+      } catch (err) {
+        console.error("Error fetching savings goals:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchSavings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const value =
+      (e.target as HTMLInputElement).type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: value
-    })
-  }
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    setIsModalOpen(false)
-    // Reset form
-    setFormData({
-      name: '',
-      targetAmount: '',
-      deadline: '',
-      category: 'Travel',
-      autoSave: true,
-      autoSaveAmount: '',
-      autoSaveFrequency: 'Monthly'
-    })
-  }
+      [e.target.name]: value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        name: formData.name,
+        targetAmount: Number(formData.targetAmount || 0),
+        deadline: formData.deadline || null,
+        category: formData.category,
+        autoSave: Boolean(formData.autoSave),
+        autoSaveAmount: formData.autoSave ? Number(formData.autoSaveAmount || 0) : 0,
+        autoSaveFrequency: formData.autoSaveFrequency,
+      };
+
+      const res = await api.post<SavingsGoal>("/savings", payload);
+
+      // Normalize returned goal
+      const newGoal: SavingsGoal = {
+        ...res.data,
+        targetAmount: Number(res.data.targetAmount),
+        currentAmount: Number(res.data.currentAmount ?? 0),
+        autoSaveAmount: res.data.autoSaveAmount ? Number(res.data.autoSaveAmount) : 0,
+        progress:
+          typeof res.data.progress === "number"
+            ? res.data.progress
+            : Math.round(((Number(res.data.currentAmount ?? 0) / Number(res.data.targetAmount || 1)) * 100) || 0),
+      };
+
+      setSavingsGoals((prev) => [...prev, newGoal]);
+      setIsModalOpen(false);
+
+      // Reset form
+      setFormData({
+        name: "",
+        targetAmount: "",
+        deadline: "",
+        category: "Travel",
+        autoSave: true,
+        autoSaveAmount: "",
+        autoSaveFrequency: "Monthly",
+      });
+    } catch (err) {
+      console.error("Error creating savings goal:", err);
+      // Optionally show a toast or error state
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) return <p>Loading savings goals...</p>;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -82,18 +140,22 @@ const SavingsGoalsPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Savings Goals</h1>
           <p className="text-gray-600">Track and manage your savings goals</p>
         </div>
-        <Button 
-          variant="primary" 
+        <Button
+          variant="primary"
           className="flex items-center"
           onClick={() => setIsModalOpen(true)}
         >
           <PlusIcon size={16} className="mr-1" /> New Goal
         </Button>
       </div>
+
       {/* Goals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {savingsGoals.map(goal => (
-          <div key={goal.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        {savingsGoals.map((goal) => (
+          <div
+            key={goal.id}
+            className="bg-white rounded-xl shadow-sm border border-gray-100 p-5"
+          >
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="font-semibold text-gray-900">{goal.name}</h3>
@@ -103,40 +165,51 @@ const SavingsGoalsPage = () => {
                 <PiggyBankIcon size={20} className="text-green-600" />
               </div>
             </div>
+
             <div className="mb-4">
               <div className="flex justify-between mb-1">
                 <span className="text-sm text-gray-500">Progress</span>
-                <span className="text-sm font-medium">{goal.progress}%</span>
+                <span className="text-sm font-medium">{goal.progress ?? 0}%</span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-green-500 rounded-full" 
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
+                <div
+                  className="h-full bg-green-500 rounded-full"
+                  style={{ width: `${goal.progress ?? 0}%` }}
+                />
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-xs text-gray-500">Current</p>
-                <p className="text-lg font-medium text-gray-900">${goal.currentAmount.toLocaleString()}</p>
+                <p className="text-lg font-medium text-gray-900">
+                  ${goal.currentAmount.toLocaleString()}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Target</p>
-                <p className="text-lg font-medium text-gray-900">${goal.targetAmount.toLocaleString()}</p>
+                <p className="text-lg font-medium text-gray-900">
+                  ${goal.targetAmount.toLocaleString()}
+                </p>
               </div>
             </div>
+
             <div className="mb-4">
               <p className="text-xs text-gray-500">Deadline</p>
-              <p className="text-sm text-gray-700">{new Date(goal.deadline).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-700">
+                {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : "—"}
+              </p>
             </div>
+
             {goal.autoSave && (
               <div className="mb-4 bg-blue-50 p-2 rounded-lg flex items-center">
                 <TrendingUpIcon size={16} className="text-blue-600 mr-2" />
                 <p className="text-xs text-blue-800">
-                  Auto-saving ${goal.autoSaveAmount} {goal.autoSaveFrequency}
+                  Auto-saving ${goal.autoSaveAmount ?? 0} {goal.autoSaveFrequency}
                 </p>
               </div>
             )}
+
             <div className="border-t border-gray-100 pt-4 mt-2 flex justify-between">
               <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
                 <EditIcon size={14} className="mr-1" /> Edit
@@ -148,6 +221,7 @@ const SavingsGoalsPage = () => {
           </div>
         ))}
       </div>
+
       {/* New Goal Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -160,10 +234,9 @@ const SavingsGoalsPage = () => {
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Savings Goal</h3>
                 <form onSubmit={handleSubmit}>
+                  {/* Goal Name */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Goal Name*
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Goal Name*</label>
                     <input
                       type="text"
                       name="name"
@@ -174,10 +247,10 @@ const SavingsGoalsPage = () => {
                       placeholder="e.g., Vacation Fund"
                     />
                   </div>
+
+                  {/* Target Amount */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Target Amount*
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Amount*</label>
                     <div className="relative">
                       <span className="absolute left-3 top-2">$</span>
                       <input
@@ -193,10 +266,10 @@ const SavingsGoalsPage = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Target Date */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Target Date*
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Date*</label>
                     <input
                       type="date"
                       name="deadline"
@@ -206,10 +279,10 @@ const SavingsGoalsPage = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+
+                  {/* Category */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select
                       name="category"
                       value={formData.category}
@@ -224,6 +297,8 @@ const SavingsGoalsPage = () => {
                       <option value="Other">Other</option>
                     </select>
                   </div>
+
+                  {/* Auto Save */}
                   <div className="mb-4">
                     <div className="flex items-center">
                       <input
@@ -239,12 +314,11 @@ const SavingsGoalsPage = () => {
                       </label>
                     </div>
                   </div>
+
                   {formData.autoSave && (
                     <div className="bg-gray-50 p-4 rounded-lg mb-4">
                       <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Auto-save Amount
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Auto-save Amount</label>
                         <div className="relative">
                           <span className="absolute left-3 top-2">$</span>
                           <input
@@ -259,10 +333,9 @@ const SavingsGoalsPage = () => {
                           />
                         </div>
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Frequency
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
                         <select
                           name="autoSaveFrequency"
                           value={formData.autoSaveFrequency}
@@ -276,6 +349,8 @@ const SavingsGoalsPage = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Buttons */}
                   <div className="pt-4 border-t border-gray-200 flex justify-end space-x-3">
                     <button
                       type="button"
@@ -284,7 +359,7 @@ const SavingsGoalsPage = () => {
                     >
                       Cancel
                     </button>
-                    <Button type="submit">
+                    <Button type="submit" loading={submitting} variant="primary">
                       Create Goal
                     </Button>
                   </div>
@@ -295,6 +370,9 @@ const SavingsGoalsPage = () => {
         </div>
       )}
     </div>
-  )
-}
-export default SavingsGoalsPage
+  );
+};
+
+export default SavingsGoalsPage;
+
+

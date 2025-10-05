@@ -1,60 +1,77 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SearchIcon, FilterIcon, ArrowUpRightIcon, ArrowDownLeftIcon, DownloadIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import Button from '../../components/Button'
-// Mock data
-const transactions = [
-  { id: '1', description: 'Salary Deposit', amount: 3500.00, type: 'credit', date: '2023-05-15', category: 'Income', account: 'Current Account' },
-  { id: '2', description: 'Rent Payment', amount: 1200.00, type: 'debit', date: '2023-05-02', category: 'Housing', account: 'Current Account' },
-  { id: '3', description: 'Grocery Store', amount: 85.75, type: 'debit', date: '2023-05-10', category: 'Groceries', account: 'Current Account' },
-  { id: '4', description: 'Online Transfer', amount: 500.00, type: 'credit', date: '2023-05-08', category: 'Transfer', account: 'Savings Account' },
-  { id: '5', description: 'Electric Bill', amount: 120.50, type: 'debit', date: '2023-05-05', category: 'Utilities', account: 'Current Account' },
-  { id: '6', description: 'Freelance Payment', amount: 1200.00, type: 'credit', date: '2023-05-03', category: 'Income', account: 'Current Account' },
-  { id: '7', description: 'Restaurant', amount: 65.30, type: 'debit', date: '2023-05-12', category: 'Dining', account: 'Current Account' },
-  { id: '8', description: 'Mobile Phone Bill', amount: 45.99, type: 'debit', date: '2023-05-07', category: 'Utilities', account: 'Current Account' },
-  { id: '9', description: 'Interest Earned', amount: 12.33, type: 'credit', date: '2023-05-31', category: 'Interest', account: 'Savings Account' },
-  { id: '10', description: 'Gym Membership', amount: 50.00, type: 'debit', date: '2023-05-01', category: 'Health & Fitness', account: 'Current Account' }
-]
+import { getTransactions } from '../../api/transactionApi'
+
+// Match your backend Transaction interface
+interface Transaction {
+  id: string
+  type: "transfer" | "deposit" | "withdraw"
+  amount: number
+  currency: string
+  description?: string
+  status: "pending" | "completed" | "failed"
+  fromAccountId?: string
+  toAccountId?: string
+  createdAt: string
+  updatedAt: string
+}
+
 const TransactionsPage = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
     type: 'all',
-    category: 'all',
-    account: 'all'
+    account: 'all',
+    status: 'all'
   })
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const res = await getTransactions()
+        setTransactions(res.data) // Axios response -> { data }
+      } catch (err) {
+        console.error("Error fetching transactions", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [])
+
   // Filter transactions
   const filteredTransactions = transactions.filter(transaction => {
-    // Search term
-    if (searchTerm && !transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !(transaction.description || '').toLowerCase().includes(searchTerm.toLowerCase())) {
       return false
     }
-    // Date filter
-    if (filters.dateFrom && new Date(transaction.date) < new Date(filters.dateFrom)) {
+    if (filters.dateFrom && new Date(transaction.createdAt) < new Date(filters.dateFrom)) {
       return false
     }
-    if (filters.dateTo && new Date(transaction.date) > new Date(filters.dateTo)) {
+    if (filters.dateTo && new Date(transaction.createdAt) > new Date(filters.dateTo)) {
       return false
     }
-    // Type filter
     if (filters.type !== 'all' && transaction.type !== filters.type) {
       return false
     }
-    // Category filter
-    if (filters.category !== 'all' && transaction.category !== filters.category) {
-      return false
-    }
-    // Account filter
-    if (filters.account !== 'all' && transaction.account !== filters.account) {
+    if (filters.status !== 'all' && transaction.status !== filters.status) {
       return false
     }
     return true
   })
-  // Get unique categories and accounts for filters
-  const categories = [...new Set(transactions.map(t => t.category))]
-  const accounts = [...new Set(transactions.map(t => t.account))]
+
+  if (loading) {
+    return <p className="text-gray-600">Loading transactions...</p>
+  }
+
+  // Collect categories (from description) + accounts for filters
+  const accounts = [...new Set(transactions.map(t => t.fromAccountId || t.toAccountId || 'Unknown'))]
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -66,6 +83,7 @@ const TransactionsPage = () => {
           <DownloadIcon size={16} className="mr-1" /> Export
         </Button>
       </div>
+
       {/* Search and Filter */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -87,13 +105,12 @@ const TransactionsPage = () => {
             <FilterIcon size={16} className="mr-1" /> Filter
           </Button>
         </div>
+
         {filterOpen && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
                 <input
                   type="date"
                   value={filters.dateFrom}
@@ -102,9 +119,7 @@ const TransactionsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  To Date
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
                 <input
                   type="date"
                   value={filters.dateTo}
@@ -113,38 +128,33 @@ const TransactionsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
                   value={filters.type}
                   onChange={(e) => setFilters({...filters, type: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="all">All Types</option>
-                  <option value="credit">Credit</option>
-                  <option value="debit">Debit</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="withdraw">Withdraw</option>
+                  <option value="transfer">Transfer</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
-                  value={filters.category}
-                  onChange={(e) => setFilters({...filters, category: e.target.value})}
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
                 <select
                   value={filters.account}
                   onChange={(e) => setFilters({...filters, account: e.target.value})}
@@ -157,81 +167,48 @@ const TransactionsPage = () => {
                 </select>
               </div>
             </div>
-            <div className="flex justify-end mt-4">
-              <Button 
-                variant="outline" 
-                className="mr-2"
-                onClick={() => setFilters({
-                  dateFrom: '',
-                  dateTo: '',
-                  type: 'all',
-                  category: 'all',
-                  account: 'all'
-                })}
-              >
-                Reset
-              </Button>
-              <Button variant="primary">Apply Filters</Button>
-            </div>
           </div>
         )}
       </div>
+
       {/* Transactions Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Account
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
-                        transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        {transaction.type === 'credit' ? (
-                          <ArrowUpRightIcon size={16} className="text-green-600" />
-                        ) : (
-                          <ArrowDownLeftIcon size={16} className="text-red-600" />
-                        )}
-                      </div>
-                      <span className="font-medium text-gray-900">{transaction.description}</span>
+                  <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
+                      transaction.type === 'deposit' || transaction.type === 'transfer' ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                      {transaction.type === 'deposit' || transaction.type === 'transfer' ? (
+                        <ArrowUpRightIcon size={16} className="text-green-600" />
+                      ) : (
+                        <ArrowDownLeftIcon size={16} className="text-red-600" />
+                      )}
                     </div>
+                    <span className="font-medium text-gray-900">{transaction.description || "No description"}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.category}
+                    {new Date(transaction.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(transaction.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.account}
+                    {transaction.fromAccountId || transaction.toAccountId || "N/A"}
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${
-                    transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                    transaction.type === 'deposit' || transaction.type === 'transfer' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                    {transaction.type === 'withdraw' ? '-' : '+'}{transaction.currency} {transaction.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link to={`/dashboard/transactions/${transaction.id}`} className="text-blue-600 hover:text-blue-800">
@@ -243,22 +220,10 @@ const TransactionsPage = () => {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
-        <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
-          <div className="text-sm text-gray-500">
-            Showing <span className="font-medium">1</span> to <span className="font-medium">10</span> of <span className="font-medium">20</span> results
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-              <ChevronLeftIcon size={16} />
-            </button>
-            <button className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50">
-              <ChevronRightIcon size={16} />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )
 }
+
 export default TransactionsPage
+
