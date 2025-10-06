@@ -25,13 +25,13 @@ const SignupPage: React.FC = () => {
     if (step < 3) {
       setStep(step + 1)
     } else {
+      const fullName = `${formData.firstName} ${formData.lastName}`
+
       await signup({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName,
         email: formData.email,
         password: formData.password,
-        phoneNumber: formData.phone,
-        birthday: formData.dateOfBirth,
+        phone: formData.phone, // matches backend field
       })
     }
   }
@@ -142,7 +142,6 @@ const SignupPage: React.FC = () => {
                 value={formData.dateOfBirth}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
-                required
               />
             </>
           )}
@@ -186,4 +185,5 @@ const SignupPage: React.FC = () => {
 }
 
 export default SignupPage
+
 
