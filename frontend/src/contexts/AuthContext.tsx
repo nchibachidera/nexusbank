@@ -18,12 +18,10 @@ type AuthContextType = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (data: {
-    firstName: string
-    lastName: string
+    fullName: string
     email: string
     password: string
-    phoneNumber?: string
-    birthday?: string;
+    phone?: string
   }) => Promise<void>
   logout: () => void
   error: string | null
@@ -68,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Convert API user → frontend User
       const formattedUser: User = {
         id: user.id,
-        fullName: `${user.firstName} ${user.lastName}`,
+        fullName: user.fullName,
         email: user.email,
       }
 
@@ -90,12 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Signup
   const signup = async (data: {
-    firstName: string
-    lastName: string
+    fullName: string
     email: string
     password: string
-    phoneNumber?: string
-    birthday?: string;
+    phone?: string
   }) => {
     setIsLoading(true)
     setError(null)

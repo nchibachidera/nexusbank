@@ -26,7 +26,7 @@ export default (sequelize) => {
     },
     birthday: { 
       type: DataTypes.DATEONLY,   // stores YYYY-MM-DD
-      allowNull: false 
+      allowNull: true  // Changed from false to true - now optional
     },
     kycStatus: { 
       type: DataTypes.STRING, 

@@ -10,7 +10,7 @@ const start = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected');
     // Sync models - create tables if not exist
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log('✅ Models synchronized');
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (err) {

@@ -5,21 +5,40 @@ import { Op } from 'sequelize';
 
 export const register = async (req, res) => {
   try {
+    console.log('📥 Received registration data:', req.body);
+    
     const { fullName, email, password, phone } = req.body;
-    if (!fullName || !email || !password) return res.status(400).json({ message: 'Missing fields' });
-    // check existing
+    
+    if (!fullName || !email || !password) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+    
+    // Check existing user
     const existing = await User.findOne({ where: { [Op.or]: [{ email }] } });
-    if (existing) return res.status(400).json({ message: 'User already exists' });
+    if (existing) {
+      console.log('❌ User already exists');
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    
     const hashed = await bcrypt.hash(password, 10);
+    
+    console.log('📝 Creating user with:', { fullName, email, phone });
     const user = await User.create({ fullName, email, password: hashed, phone });
-    // create default savings account for user with generated account number
+    
+    // Create default savings account for user with generated account number
     const accountNumber = 'NB' + Date.now().toString().slice(-10);
     await Account.create({ userId: user.id, accountNumber, accountType: 'savings', balance: 0.00 });
+    
     const token = signToken({ id: user.id, email: user.email });
+    
+    console.log('✅ User created successfully');
     return res.status(201).json({ user: { id: user.id, fullName: user.fullName, email: user.email }, token });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('❌ Registration error:', err);
+    console.error('Error details:', err.message);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

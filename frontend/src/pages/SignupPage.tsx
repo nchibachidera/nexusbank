@@ -25,14 +25,14 @@ const SignupPage: React.FC = () => {
     if (step < 3) {
       setStep(step + 1)
     } else {
-      await signup({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      const signupData = {
+        fullName: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
-        phoneNumber: formData.phone,
-        birthday: formData.dateOfBirth
-      })
+        phone: formData.phone
+      }
+      console.log('📤 Sending signup data:', signupData)
+      await signup(signupData)
     }
   }
 

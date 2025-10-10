@@ -1,12 +1,10 @@
 import API from "./axiosApi";
 
 interface RegisterData {
+  fullName: string;
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-  birthday?: string;
+  phone?: string;
 }
 
 interface LoginData {
@@ -19,17 +17,15 @@ interface AuthResponse {
   user: {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
   };
 }
 
 interface UserProfile {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
+  fullName: string;
+  phone?: string;
   createdAt: string;
 }
 

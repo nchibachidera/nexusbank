@@ -43,17 +43,62 @@ const DashboardHome = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load accounts
-    getAccounts().then(res => setAccounts(res.data)).catch(console.error)
-    // Load transactions (limit 5 for dashboard)
-    getTransactions().then(res => setTransactions(res.data.slice(0, 5))).catch(console.error)
-    // Load notifications
-    getNotifications().then(res => setNotifications(res)).catch(console.error)
-    // Load savings goals (just first goal for preview)
-    getSavingsGoals().then(res => setSavingsGoals(res.data)).catch(console.error)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load accounts - expects { accounts: [...] }
+        const accountsRes = await getAccounts()
+        setAccounts(accountsRes.data.accounts || [])
+        
+        // Load transactions - expects { transactions: [...] }
+        const transactionsRes = await getTransactions()
+        const transactionsList = transactionsRes.data.transactions || transactionsRes.data || []
+        setTransactions(Array.isArray(transactionsList) ? transactionsList.slice(0, 5) : [])
+        
+        // Load notifications - handle different response formats
+        try {
+          const notificationsRes = await getNotifications()
+          const notificationsList = notificationsRes.data?.notifications || notificationsRes.data || notificationsRes || []
+          setNotifications(Array.isArray(notificationsList) ? notificationsList : [])
+        } catch (err) {
+          console.error('Notifications error:', err)
+          setNotifications([])
+        }
+        
+        // Load savings goals - expects { data: [...] }
+        try {
+          const savingsRes = await getSavingsGoals()
+          const savingsList = savingsRes.data?.goals || savingsRes.data || []
+          setSavingsGoals(Array.isArray(savingsList) ? savingsList : [])
+        } catch (err) {
+          console.error('Savings goals error:', err)
+          setSavingsGoals([])
+        }
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -70,28 +115,34 @@ const DashboardHome = () => {
             View All <ArrowRightIcon size={16} className="ml-1" />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {accounts.map(account => (
-            <div key={account.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm text-gray-500">{account.accountType}</p>
-                  <p className="text-sm text-gray-500">{account.accountNumber}</p>
+        {accounts.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
+            <p className="text-gray-500">No accounts found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {accounts.map(account => (
+              <div key={account.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500">{account.accountType}</p>
+                    <p className="text-sm text-gray-500">{account.accountNumber}</p>
+                  </div>
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center bg-blue-100">
+                    <CreditCardIcon size={20} className="text-blue-600" />
+                  </div>
                 </div>
-                <div className="h-10 w-10 rounded-full flex items-center justify-center bg-blue-100">
-                  <CreditCardIcon size={20} className="text-blue-600" />
-                </div>
+                <p className="text-2xl font-bold text-gray-900">${account.balance.toLocaleString()}</p>
+                <Link 
+                  to={`/dashboard/accounts/${account.id}`} 
+                  className="mt-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                  Details <ArrowRightIcon size={16} className="ml-1" />
+                </Link>
               </div>
-              <p className="text-2xl font-bold text-gray-900">${account.balance.toLocaleString()}</p>
-              <Link 
-                to={`/dashboard/accounts/${account.id}`} 
-                className="mt-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
-              >
-                Details <ArrowRightIcon size={16} className="ml-1" />
-              </Link>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -104,33 +155,39 @@ const DashboardHome = () => {
                 View All <ArrowRightIcon size={16} className="ml-1" />
               </Link>
             </div>
-            <div className="space-y-3">
-              {transactions.map(transaction => (
-                <div key={transaction.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <div className="flex items-center">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center mr-3 ${
-                      transaction.type === 'deposit' ? 'bg-green-100' : 'bg-red-100'
+            {transactions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No transactions yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transactions.map(transaction => (
+                  <div key={transaction.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="flex items-center">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center mr-3 ${
+                        transaction.type === 'deposit' ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {transaction.type === 'deposit' 
+                          ? <ArrowUpRightIcon size={16} className="text-green-600" /> 
+                          : <ArrowDownLeftIcon size={16} className="text-red-600" />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{transaction.description ?? transaction.type}</p>
+                        <p className="text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <p className={`font-medium ${
+                      transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.type === 'deposit' 
-                        ? <ArrowUpRightIcon size={16} className="text-green-600" /> 
-                        : <ArrowDownLeftIcon size={16} className="text-red-600" />}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description ?? transaction.type}</p>
-                      <p className="text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
-                    </div>
+                      {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                    </p>
                   </div>
-                  <p className={`font-medium ${
-                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount.toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Quick Transfer (unchanged UI) */}
+          {/* Quick Transfer */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Transfer</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -157,19 +214,25 @@ const DashboardHome = () => {
                 {notifications.length} New
               </span>
             </div>
-            <div className="space-y-4">
-              {notifications.map(notification => (
-                <div key={notification.id} className="flex items-start">
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 bg-blue-100">
-                    <BellIcon size={16} className="text-blue-600" />
+            {notifications.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">No notifications</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map(notification => (
+                  <div key={notification.id} className="flex items-start">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 bg-blue-100">
+                      <BellIcon size={16} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-900">{notification.message}</p>
+                      <p className="text-xs text-gray-500">{notification.time}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-900">{notification.message}</p>
-                    <p className="text-xs text-gray-500">{notification.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Savings Goal Preview */}

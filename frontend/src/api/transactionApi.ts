@@ -22,13 +22,18 @@ interface CreateTransactionData {
   currency?: string;
 }
 
+// Response types
+interface TransactionsResponse {
+  transactions: Transaction[];
+}
+
 // Get all transactions of logged-in user
 export const getTransactions = () => 
-  API.get<Transaction[]>("/transactions");
+  API.get<TransactionsResponse>("/transactions");
 
 // Get transactions for a specific account
 export const getTransactionsByAccount = (accountId: string) =>
-  API.get<Transaction[]>(`/transactions/account/${accountId}`);
+  API.get<TransactionsResponse>(`/transactions/account/${accountId}`);
 
 // Create new transaction (transfer, deposit, withdraw)
 export const createTransaction = (data: CreateTransactionData) => 

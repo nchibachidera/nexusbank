@@ -16,9 +16,14 @@ interface CreateAccountData {
   initialDeposit?: number;
 }
 
+// Response types
+interface AccountsResponse {
+  accounts: Account[];
+}
+
 // Get all accounts of logged-in user
 export const getAccounts = () => 
-  API.get<Account[]>("/accounts");
+  API.get<AccountsResponse>("/accounts");
 
 // Get single account by ID
 export const getAccountById = (accountId: string) => 

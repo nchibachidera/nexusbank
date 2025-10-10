@@ -72,9 +72,10 @@ const AccountsPage = () => {
     const fetchAccounts = async () => {
       try {
         const res = await getAccounts()
-        setAccounts(res.data) // because API.get returns { data }
+        setAccounts(res.data.accounts || []) // Fixed: Get accounts from response object
       } catch (error) {
         console.error("Error fetching accounts", error)
+        setAccounts([]) // Set empty array on error
       } finally {
         setLoading(false)
       }
@@ -83,7 +84,14 @@ const AccountsPage = () => {
   }, [])
 
   if (loading) {
-    return <p className="text-gray-600">Loading accounts...</p>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading accounts...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -97,11 +105,20 @@ const AccountsPage = () => {
           <PlusIcon size={16} className="mr-1" /> New Account
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map(account => (
-          <AccountCard key={account.id} account={account} />
-        ))}
-      </div>
+      {accounts.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
+          <p className="text-gray-500 mb-4">You don't have any accounts yet</p>
+          <Button variant="primary" className="flex items-center mx-auto">
+            <PlusIcon size={16} className="mr-1" /> Create Your First Account
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {accounts.map(account => (
+            <AccountCard key={account.id} account={account} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -24,9 +24,14 @@ interface UpdateSavingsGoalData {
   deadline?: string;
 }
 
+// Response types
+interface SavingsGoalsResponse {
+  goals: SavingsGoal[];
+}
+
 // Get all savings goals
 export const getSavingsGoals = () => 
-  API.get<SavingsGoal[]>("/savings");
+  API.get<SavingsGoalsResponse>("/savings");
 
 // Create a new savings goal
 export const createSavingsGoal = (data: CreateSavingsGoalData) =>
