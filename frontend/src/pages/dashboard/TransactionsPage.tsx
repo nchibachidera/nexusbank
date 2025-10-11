@@ -6,15 +6,12 @@ import { getTransactions } from '../../api/transactionApi'
 
 interface Transaction {
   id: string
-  type: "transfer" | "deposit" | "withdraw"
+  accountId: string
+  transactionType: string
   amount: number
-  currency: string
   description?: string
-  status: "pending" | "completed" | "failed"
-  fromAccountId?: string
-  toAccountId?: string
+  status: string
   createdAt: string
-  updatedAt: string
 }
 
 const TransactionsPage = () => {
@@ -49,7 +46,7 @@ const TransactionsPage = () => {
     if (searchTerm && !(transaction.description || '').toLowerCase().includes(searchTerm.toLowerCase())) return false
     if (filters.dateFrom && new Date(transaction.createdAt) < new Date(filters.dateFrom)) return false
     if (filters.dateTo && new Date(transaction.createdAt) > new Date(filters.dateTo)) return false
-    if (filters.type !== 'all' && transaction.type !== filters.type) return false
+    if (filters.type !== 'all' && !transaction.transactionType.includes(filters.type)) return false
     if (filters.status !== 'all' && transaction.status !== filters.status) return false
     return true
   })
@@ -65,7 +62,7 @@ const TransactionsPage = () => {
     )
   }
 
-  const accounts = [...new Set(transactions.map(t => t.fromAccountId || t.toAccountId || 'Unknown'))]
+  const accounts = [...new Set(transactions.map(t => t.accountId))]
 
   return (
     <div>
@@ -150,7 +147,7 @@ const TransactionsPage = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                 </tr>
@@ -159,15 +156,19 @@ const TransactionsPage = () => {
                 {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap flex items-center">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${transaction.type === 'deposit' || transaction.type === 'transfer' ? 'bg-green-100' : 'bg-red-100'}`}>
-                        {transaction.type === 'deposit' || transaction.type === 'transfer' ? <ArrowUpRightIcon size={16} className="text-green-600" /> : <ArrowDownLeftIcon size={16} className="text-red-600" />}
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${transaction.transactionType.includes('in') || transaction.transactionType === 'deposit' ? 'bg-green-100' : 'bg-red-100'}`}>
+                        {transaction.transactionType.includes('in') || transaction.transactionType === 'deposit' ? <ArrowUpRightIcon size={16} className="text-green-600" /> : <ArrowDownLeftIcon size={16} className="text-red-600" />}
                       </div>
                       <span className="font-medium text-gray-900">{transaction.description || "No description"}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.fromAccountId || transaction.toAccountId || "N/A"}</td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${transaction.type === 'deposit' || transaction.type === 'transfer' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.type === 'withdraw' ? '-' : '+'}{transaction.currency} {transaction.amount.toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                        {transaction.transactionType.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${transaction.transactionType.includes('in') || transaction.transactionType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                      {transaction.transactionType.includes('out') || transaction.transactionType === 'withdraw' ? '-' : '+'}${transaction.amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link to={`/dashboard/transactions/${transaction.id}`} className="text-blue-600 hover:text-blue-800">View</Link>

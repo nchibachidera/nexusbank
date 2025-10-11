@@ -2,24 +2,20 @@ import API from "./axiosApi";
 
 interface Transaction {
   id: string;
-  type: "transfer" | "deposit" | "withdraw";
+  accountId: string;
+  transactionType: string;
   amount: number;
-  currency: string;
   description?: string;
-  status: "pending" | "completed" | "failed";
-  fromAccountId?: string;
-  toAccountId?: string;
+  status: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 interface CreateTransactionData {
-  type: "transfer" | "deposit" | "withdraw";
+  transactionType: "transfer" | "deposit" | "withdraw";
   amount: number;
-  fromAccountId?: string;
+  accountId: string;
   toAccountId?: string;
   description?: string;
-  currency?: string;
 }
 
 // Response types
