@@ -26,13 +26,18 @@ export const register = async (req, res) => {
     console.log('📝 Creating user with:', { fullName, email, phone });
     const user = await User.create({ fullName, email, password: hashed, phone });
     
-    // Create default savings account for user with generated account number
+    // Create default savings account with initial balance of $1000
     const accountNumber = 'NB' + Date.now().toString().slice(-10);
-    await Account.create({ userId: user.id, accountNumber, accountType: 'savings', balance: 0.00 });
+    await Account.create({ 
+      userId: user.id, 
+      accountNumber, 
+      accountType: 'savings', 
+      balance: 1000.00  // Initial balance - simulates opening deposit
+    });
     
     const token = signToken({ id: user.id, email: user.email });
     
-    console.log('✅ User created successfully');
+    console.log('✅ User created successfully with initial balance of $1000');
     return res.status(201).json({ user: { id: user.id, fullName: user.fullName, email: user.email }, token });
   } catch (err) {
     console.error('❌ Registration error:', err);
