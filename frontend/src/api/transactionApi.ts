@@ -15,6 +15,7 @@ interface CreateTransactionData {
   amount: number;
   accountId: string;
   toAccountId?: string;
+  toAccountNumber?: string;  // Add this to accept account number
   description?: string;
 }
 

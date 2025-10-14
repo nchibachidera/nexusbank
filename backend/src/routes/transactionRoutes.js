@@ -4,6 +4,13 @@ import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+// Add logging middleware
+router.use((req, res, next) => {
+  console.log('🔵 Transaction route hit:', req.method, req.path);
+  console.log('🔵 Request body:', req.body);
+  next();
+});
+
 // Get all transactions for logged-in user
 router.get('/', authenticate, getTransactions);
 

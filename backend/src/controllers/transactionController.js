@@ -65,10 +65,18 @@ export const createTransaction = async (req, res) => {
     const userId = req.user.id;
     const { transactionType, amount, accountId, toAccountId, description } = req.body;
     
+    console.log('🔵 CREATE TRANSACTION CALLED');
+    console.log('📥 Request body:', req.body);
+    console.log('📥 accountId:', accountId, 'type:', typeof accountId);
+    
+    // Convert accountId to integer
+    const accountIdInt = parseInt(accountId);
+    const toAccountIdInt = toAccountId ? parseInt(toAccountId) : null;
+    
     // Validate required fields
-    if (!transactionType || !amount || !accountId) {
+    if (!transactionType || !amount || !accountIdInt || isNaN(accountIdInt)) {
       await t.rollback();
-      return res.status(400).json({ message: 'transactionType, amount, and accountId are required' });
+      return res.status(400).json({ message: 'transactionType, amount, and valid accountId are required' });
     }
     
     if (amount <= 0) {
@@ -77,7 +85,7 @@ export const createTransaction = async (req, res) => {
     }
     
     // Verify account belongs to user
-    const account = await Account.findOne({ where: { id: accountId, userId }, transaction: t });
+    const account = await Account.findOne({ where: { id: accountIdInt, userId }, transaction: t });
     if (!account) {
       await t.rollback();
       return res.status(404).json({ message: 'Account not found' });
@@ -85,9 +93,20 @@ export const createTransaction = async (req, res) => {
     
     // Handle different transaction types
     if (transactionType === 'transfer') {
-      if (!toAccountId) {
+      // Check if toAccountId is provided, if not check for accountNumber
+      let toAccount;
+      
+      if (toAccountId) {
+        // Find by ID
+        toAccount = await Account.findOne({ where: { id: toAccountId }, transaction: t });
+      } else if (req.body.toAccountNumber) {
+        // Find by account number
+        toAccount = await Account.findOne({ where: { accountNumber: req.body.toAccountNumber }, transaction: t });
+      }
+      
+      if (!toAccount) {
         await t.rollback();
-        return res.status(400).json({ message: 'toAccountId is required for transfers' });
+        return res.status(404).json({ message: 'Destination account not found' });
       }
       
       // Check sufficient balance
@@ -96,20 +115,13 @@ export const createTransaction = async (req, res) => {
         return res.status(400).json({ message: 'Insufficient balance' });
       }
       
-      // Get destination account
-      const toAccount = await Account.findOne({ where: { id: toAccountId }, transaction: t });
-      if (!toAccount) {
-        await t.rollback();
-        return res.status(404).json({ message: 'Destination account not found' });
-      }
-      
       // Update balances
       await account.update({ balance: account.balance - amount }, { transaction: t });
       await toAccount.update({ balance: toAccount.balance + amount }, { transaction: t });
       
       // Create debit transaction for sender
       await Transaction.create({
-        accountId,
+        accountId: accountIdInt,
         transactionType: 'transfer_out',
         amount,
         description: description || `Transfer to ${toAccount.accountNumber}`,
@@ -118,7 +130,7 @@ export const createTransaction = async (req, res) => {
       
       // Create credit transaction for receiver
       await Transaction.create({
-        accountId: toAccountId,
+        accountId: toAccount.id,
         transactionType: 'transfer_in',
         amount,
         description: description || `Transfer from ${account.accountNumber}`,
@@ -134,7 +146,7 @@ export const createTransaction = async (req, res) => {
       
       // Create transaction record
       const transaction = await Transaction.create({
-        accountId,
+        accountId: accountIdInt,
         transactionType: 'deposit',
         amount,
         description: description || 'Deposit',
@@ -156,7 +168,7 @@ export const createTransaction = async (req, res) => {
       
       // Create transaction record
       const transaction = await Transaction.create({
-        accountId,
+        accountId: accountIdInt,
         transactionType: 'withdraw',
         amount,
         description: description || 'Withdrawal',

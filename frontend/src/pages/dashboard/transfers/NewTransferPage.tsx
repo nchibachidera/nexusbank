@@ -91,21 +91,12 @@ const NewTransferPage = () => {
       setIsSubmitting(true)
       
       try {
-        // Find recipient account by account number (this is simplified - in reality you'd search by account number)
-        const toAccount = accounts.find(acc => acc.accountNumber === formData.recipientAccountNumber)
-        
-        if (!toAccount) {
-          setError('Recipient account not found. Please check the account number.')
-          setIsSubmitting(false)
-          return
-        }
-
-        // Create the transfer transaction
+        // Create the transfer transaction - send account number to backend
         await createTransaction({
           transactionType: 'transfer',
           amount: parseFloat(formData.amount),
           accountId: formData.fromAccount,
-          toAccountId: toAccount.id,
+          toAccountNumber: formData.recipientAccountNumber,  // Send account number instead of ID
           description: formData.reference || `Transfer to ${formData.recipientName}`
         })
 
