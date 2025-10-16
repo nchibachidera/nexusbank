@@ -73,6 +73,8 @@ export const createTransaction = async (req, res) => {
     const accountIdInt = parseInt(accountId);
     const toAccountIdInt = toAccountId ? parseInt(toAccountId) : null;
     
+    console.log('🔢 Parsed accountIdInt:', accountIdInt, 'toAccountIdInt:', toAccountIdInt);
+    
     // Validate required fields
     if (!transactionType || !amount || !accountIdInt || isNaN(accountIdInt)) {
       await t.rollback();
@@ -85,7 +87,10 @@ export const createTransaction = async (req, res) => {
     }
     
     // Verify account belongs to user
+    console.log('🔍 Looking for source account - ID:', accountIdInt, 'userId:', userId);
     const account = await Account.findOne({ where: { id: accountIdInt, userId }, transaction: t });
+    console.log('📝 Source account found:', account ? `ID: ${account.id}, Balance: ${account.balance}, Type: ${account.accountType}` : 'NOT FOUND');
+    
     if (!account) {
       await t.rollback();
       return res.status(404).json({ message: 'Account not found' });
@@ -93,16 +98,20 @@ export const createTransaction = async (req, res) => {
     
     // Handle different transaction types
     if (transactionType === 'transfer') {
+      console.log('💸 Processing transfer...');
+      
       // Check if toAccountId is provided, if not check for accountNumber
       let toAccount;
       
-      if (toAccountId) {
-        // Find by ID
-        toAccount = await Account.findOne({ where: { id: toAccountId }, transaction: t });
+      if (toAccountIdInt) {
+        console.log('🔍 Finding recipient by ID:', toAccountIdInt);
+        toAccount = await Account.findOne({ where: { id: toAccountIdInt }, transaction: t });
       } else if (req.body.toAccountNumber) {
-        // Find by account number
+        console.log('🔍 Finding recipient by account number:', req.body.toAccountNumber);
         toAccount = await Account.findOne({ where: { accountNumber: req.body.toAccountNumber }, transaction: t });
       }
+      
+      console.log('📝 Recipient account found:', toAccount ? `ID: ${toAccount.id}, Balance: ${toAccount.balance}, AccountNumber: ${toAccount.accountNumber}` : 'NOT FOUND');
       
       if (!toAccount) {
         await t.rollback();
@@ -110,16 +119,24 @@ export const createTransaction = async (req, res) => {
       }
       
       // Check sufficient balance
-      if (account.balance < amount) {
+      console.log('💰 Checking balance: Need', amount, 'Have', parseFloat(account.balance));
+      if (parseFloat(account.balance) < amount) {
         await t.rollback();
         return res.status(400).json({ message: 'Insufficient balance' });
       }
       
       // Update balances
-      await account.update({ balance: account.balance - amount }, { transaction: t });
-      await toAccount.update({ balance: toAccount.balance + amount }, { transaction: t });
+      const newSourceBalance = parseFloat(account.balance) - amount;
+      const newDestBalance = parseFloat(toAccount.balance) + amount;
+      
+      console.log('⬇️ Updating source account', account.id, 'balance from', account.balance, 'to', newSourceBalance);
+      await account.update({ balance: newSourceBalance }, { transaction: t });
+      
+      console.log('⬆️ Updating recipient account', toAccount.id, 'balance from', toAccount.balance, 'to', newDestBalance);
+      await toAccount.update({ balance: newDestBalance }, { transaction: t });
       
       // Create debit transaction for sender
+      console.log('📝 Creating transfer_out transaction for account', accountIdInt);
       await Transaction.create({
         accountId: accountIdInt,
         transactionType: 'transfer_out',
@@ -129,6 +146,7 @@ export const createTransaction = async (req, res) => {
       }, { transaction: t });
       
       // Create credit transaction for receiver
+      console.log('📝 Creating transfer_in transaction for account', toAccount.id);
       await Transaction.create({
         accountId: toAccount.id,
         transactionType: 'transfer_in',
@@ -137,12 +155,14 @@ export const createTransaction = async (req, res) => {
         status: 'completed'
       }, { transaction: t });
       
+      console.log('💾 Committing transaction...');
       await t.commit();
+      console.log('✅ Transfer completed successfully!');
       return res.status(201).json({ message: 'Transfer completed successfully' });
       
     } else if (transactionType === 'deposit') {
       // Update balance
-      await account.update({ balance: account.balance + amount }, { transaction: t });
+      await account.update({ balance: parseFloat(account.balance) + amount }, { transaction: t });
       
       // Create transaction record
       const transaction = await Transaction.create({
@@ -158,13 +178,13 @@ export const createTransaction = async (req, res) => {
       
     } else if (transactionType === 'withdraw') {
       // Check sufficient balance
-      if (account.balance < amount) {
+      if (parseFloat(account.balance) < amount) {
         await t.rollback();
         return res.status(400).json({ message: 'Insufficient balance' });
       }
       
       // Update balance
-      await account.update({ balance: account.balance - amount }, { transaction: t });
+      await account.update({ balance: parseFloat(account.balance) - amount }, { transaction: t });
       
       // Create transaction record
       const transaction = await Transaction.create({
@@ -185,7 +205,8 @@ export const createTransaction = async (req, res) => {
     
   } catch (err) {
     await t.rollback();
-    console.error('Error creating transaction:', err);
+    console.error('❌ Error creating transaction:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
