@@ -100,8 +100,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
       {/* Main content */}
       <div className="lg:pl-64 flex flex-col flex-1">
         {/* Header */}
-        <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 h-16">
+          <div className="flex items-center justify-between h-full px-4 sm:px-6">
             <div className="flex items-center">
               <button
                 className="text-gray-500 hover:text-gray-700 lg:hidden"
@@ -131,7 +131,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-6">
           {children || <Outlet />}
         </main>
       </div>
