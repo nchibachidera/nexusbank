@@ -1,4 +1,4 @@
- import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import { Card, CardHeader, CardContent, CardFooter } from '../../../components/ui/Card'
 import Button from '../../../components/ui/Button'
@@ -13,9 +13,36 @@ import {
   SmartphoneIcon,
   BookmarkIcon
 } from 'lucide-react'
+import { getAccounts } from '../../../api/accountApi'
+import { createTransaction, getTransactions } from '../../../api/transactionApi'
+
+interface Account {
+  id: string
+  accountNumber: string
+  accountType: string
+  balance: number
+}
+
+interface Transaction {
+  id: string
+  accountId: string
+  transactionType: string
+  amount: number
+  description?: string
+  status: string
+  createdAt: string
+}
+
 const AirtimeTopupPage: React.FC = () => {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [topupSuccess, setTopupSuccess] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [topupHistory, setTopupHistory] = useState<Transaction[]>([])
+  
   const [formValues, setFormValues] = useState({
     phoneNumber: '',
     amount: '',
@@ -23,111 +50,56 @@ const AirtimeTopupPage: React.FC = () => {
     fromAccount: '',
     saveNumber: false
   })
-  // Dummy accounts data
-  const accounts = [
-    {
-      id: 'ACCT-12345',
-      name: 'Premium Checking Account',
-      number: '****7890',
-      type: 'Checking',
-      balance: 5842.67
-    },
-    {
-      id: 'ACCT-12346',
-      name: 'High-Yield Savings',
-      number: '****5432',
-      type: 'Savings',
-      balance: 12750.42
-    },
-    {
-      id: 'ACCT-12347',
-      name: 'Joint Checking Account',
-      number: '****9876',
-      type: 'Checking',
-      balance: 3241.19
-    }
-  ]
-  // Dummy network providers
+
+  // Network providers
   const providers = [
-    {
-      id: 'PROV-001',
-      name: 'Verizon',
-      logo: '🔴'
-    },
-    {
-      id: 'PROV-002',
-      name: 'AT&T',
-      logo: '🔵'
-    },
-    {
-      id: 'PROV-003',
-      name: 'T-Mobile',
-      logo: '🟣'
-    },
-    {
-      id: 'PROV-004',
-      name: 'Sprint',
-      logo: '🟡'
-    }
+    { id: 'PROV-001', name: 'Verizon', logo: '🔴' },
+    { id: 'PROV-002', name: 'AT&T', logo: '🔵' },
+    { id: 'PROV-003', name: 'T-Mobile', logo: '🟣' },
+    { id: 'PROV-004', name: 'Sprint', logo: '🟡' }
   ]
-  // Dummy saved numbers
+
+  // Dummy saved numbers (these can stay as frontend-only data for now)
   const savedNumbers = [
-    {
-      id: 'NUM-001',
-      name: 'My Number',
-      number: '(555) 123-4567',
-      provider: 'Verizon'
-    },
-    {
-      id: 'NUM-002',
-      name: 'Mom',
-      number: '(555) 987-6543',
-      provider: 'AT&T'
-    },
-    {
-      id: 'NUM-003',
-      name: 'Dad',
-      number: '(555) 456-7890',
-      provider: 'T-Mobile'
-    }
+    { id: 'NUM-001', name: 'My Number', number: '(555) 123-4567', provider: 'Verizon' },
+    { id: 'NUM-002', name: 'Mom', number: '(555) 987-6543', provider: 'AT&T' },
+    { id: 'NUM-003', name: 'Dad', number: '(555) 456-7890', provider: 'T-Mobile' }
   ]
-  // Dummy topup history
-  const topupHistory = [
-    {
-      id: 'TOP-12345',
-      date: '2023-10-12',
-      phoneNumber: '(555) 123-4567',
-      provider: 'Verizon',
-      amount: 50.00,
-      status: 'completed'
-    },
-    {
-      id: 'TOP-12344',
-      date: '2023-09-28',
-      phoneNumber: '(555) 987-6543',
-      provider: 'AT&T',
-      amount: 25.00,
-      status: 'completed'
-    },
-    {
-      id: 'TOP-12343',
-      date: '2023-09-15',
-      phoneNumber: '(555) 456-7890',
-      provider: 'T-Mobile',
-      amount: 30.00,
-      status: 'completed'
-    },
-    {
-      id: 'TOP-12342',
-      date: '2023-09-01',
-      phoneNumber: '(555) 123-4567',
-      provider: 'Verizon',
-      amount: 50.00,
-      status: 'completed'
-    }
-  ]
+
   // Common topup amounts
   const quickAmounts = [10, 25, 50, 100]
+
+  // Fetch accounts on mount
+  useEffect(() => {
+    fetchAccounts()
+    fetchTopupHistory()
+  }, [])
+
+  const fetchAccounts = async () => {
+    try {
+      const res = await getAccounts()
+      setAccounts(res.data.accounts || [])
+    } catch (err) {
+      console.error('Error fetching accounts:', err)
+    }
+  }
+
+  const fetchTopupHistory = async () => {
+    setIsLoadingHistory(true)
+    try {
+      const res = await getTransactions()
+      // Filter only airtime topup transactions
+      const airtimeTransactions = (res.data.transactions || []).filter(
+        (t: Transaction) => t.transactionType === 'airtime' || t.description?.toLowerCase().includes('airtime')
+      )
+      setTopupHistory(airtimeTransactions)
+    } catch (err) {
+      console.error('Error fetching topup history:', err)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target as HTMLInputElement
     if (type === 'checkbox') {
@@ -143,26 +115,55 @@ const AirtimeTopupPage: React.FC = () => {
       }))
     }
   }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     setShowConfirmation(true)
   }
-  const confirmTopup = () => {
-    // Here you would handle the actual topup submission to backend
-    setShowConfirmation(false)
-    setTopupSuccess(true)
-    // Reset form after a delay
-    setTimeout(() => {
-      setTopupSuccess(false)
-      setFormValues({
-        phoneNumber: '',
-        amount: '',
-        provider: '',
-        fromAccount: '',
-        saveNumber: false
+
+  const confirmTopup = async () => {
+    setIsSubmitting(true)
+    setError(null)
+    
+    try {
+      const providerName = providers.find(p => p.id === formValues.provider)?.name || 'Unknown'
+      
+      // Create transaction via API
+      await createTransaction({
+        transactionType: 'withdraw', // Airtime is a withdrawal/payment
+        amount: parseFloat(formValues.amount),
+        accountId: formValues.fromAccount,
+        description: `Airtime Top-up - ${formValues.phoneNumber} (${providerName})`
       })
-    }, 3000)
+
+      setShowConfirmation(false)
+      setTopupSuccess(true)
+      
+      // Refresh data
+      fetchAccounts()
+      fetchTopupHistory()
+      
+      // Reset form after delay
+      setTimeout(() => {
+        setTopupSuccess(false)
+        setFormValues({
+          phoneNumber: '',
+          amount: '',
+          provider: '',
+          fromAccount: '',
+          saveNumber: false
+        })
+      }, 3000)
+    } catch (err: any) {
+      console.error('Topup error:', err)
+      setError(err.response?.data?.message || 'Top-up failed. Please try again.')
+      setShowConfirmation(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+
   const selectSavedNumber = (number: any) => {
     setFormValues(prev => ({
       ...prev,
@@ -170,12 +171,24 @@ const AirtimeTopupPage: React.FC = () => {
       provider: providers.find(p => p.name === number.provider)?.id || ''
     }))
   }
+
   const setQuickAmount = (amount: number) => {
     setFormValues(prev => ({
       ...prev,
       amount: amount.toString()
     }))
   }
+
+  // Extract phone number and provider from transaction description
+  const parseTopupDetails = (description: string) => {
+    const phoneMatch = description.match(/\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)
+    const providerMatch = description.match(/\((.*?)\)/)
+    return {
+      phone: phoneMatch ? phoneMatch[0] : 'N/A',
+      provider: providerMatch ? providerMatch[1] : 'N/A'
+    }
+  }
+
   return (
     <DashboardLayout title="Airtime Top-up">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -205,6 +218,12 @@ const AirtimeTopupPage: React.FC = () => {
               </CardHeader>
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-6">
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                      {error}
+                    </div>
+                  )}
+                  
                   <div>
                     <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number
@@ -225,6 +244,7 @@ const AirtimeTopupPage: React.FC = () => {
                       />
                     </div>
                   </div>
+                  
                   <div>
                     <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">
                       Network Provider
@@ -245,6 +265,7 @@ const AirtimeTopupPage: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                  
                   <div>
                     <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
                       Amount
@@ -286,6 +307,7 @@ const AirtimeTopupPage: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                  
                   <div>
                     <label htmlFor="fromAccount" className="block text-sm font-medium text-gray-700 mb-1">
                       Pay From
@@ -301,11 +323,12 @@ const AirtimeTopupPage: React.FC = () => {
                       <option value="">Select account</option>
                       {accounts.map(account => (
                         <option key={account.id} value={account.id}>
-                          {account.name} (${account.balance.toLocaleString()})
+                          {account.accountType} ({account.accountNumber}) - ${account.balance.toLocaleString()}
                         </option>
                       ))}
                     </select>
                   </div>
+                  
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
                       <input
@@ -341,6 +364,7 @@ const AirtimeTopupPage: React.FC = () => {
               </form>
             </Card>
           )}
+
           {/* Confirmation Modal */}
           {showConfirmation && (
             <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -379,7 +403,7 @@ const AirtimeTopupPage: React.FC = () => {
                           <div className="flex justify-between">
                             <p className="text-sm text-gray-500">From Account:</p>
                             <p className="text-sm font-medium text-gray-900">
-                              {accounts.find(a => a.id === formValues.fromAccount)?.name || ''}
+                              {accounts.find(a => a.id === formValues.fromAccount)?.accountType || ''}
                             </p>
                           </div>
                           <div className="flex justify-between">
@@ -395,12 +419,14 @@ const AirtimeTopupPage: React.FC = () => {
                       variant="primary"
                       onClick={confirmTopup}
                       className="ml-3"
+                      disabled={isSubmitting}
                     >
-                      Confirm Top-up
+                      {isSubmitting ? 'Processing...' : 'Confirm Top-up'}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowConfirmation(false)}
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </Button>
@@ -409,6 +435,7 @@ const AirtimeTopupPage: React.FC = () => {
               </div>
             </div>
           )}
+
           {/* Topup History */}
           <Card className="mt-6">
             <CardHeader>
@@ -418,8 +445,10 @@ const AirtimeTopupPage: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   icon={<RefreshCwIcon size={16} />}
+                  onClick={fetchTopupHistory}
+                  disabled={isLoadingHistory}
                 >
-                  Refresh
+                  {isLoadingHistory ? 'Loading...' : 'Refresh'}
                 </Button>
               </div>
             </CardHeader>
@@ -445,33 +474,46 @@ const AirtimeTopupPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {topupHistory.map((topup) => (
-                    <tr key={topup.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(topup.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                            <PhoneCallIcon size={16} className="text-gray-600" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{topup.phoneNumber}</div>
-                            <div className="text-xs text-gray-500">ID: {topup.id}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {topup.provider}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-                        ${topup.amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <Badge variant="success">Completed</Badge>
+                  {topupHistory.length > 0 ? (
+                    topupHistory.map((topup) => {
+                      const details = parseTopupDetails(topup.description || '')
+                      return (
+                        <tr key={topup.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(topup.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                <PhoneCallIcon size={16} className="text-gray-600" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{details.phone}</div>
+                                <div className="text-xs text-gray-500">ID: {topup.id.slice(0, 10)}...</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {details.provider}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+                            ${topup.amount.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <Badge variant={topup.status === 'completed' ? 'success' : 'warning'}>
+                              {topup.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                        {isLoadingHistory ? 'Loading history...' : 'No top-up history found'}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -480,6 +522,7 @@ const AirtimeTopupPage: React.FC = () => {
             </CardFooter>
           </Card>
         </div>
+
         <div className="lg:col-span-1">
           {/* Saved Numbers Card */}
           <Card>
@@ -527,6 +570,7 @@ const AirtimeTopupPage: React.FC = () => {
               </Button>
             </CardFooter>
           </Card>
+
           {/* Special Offers */}
           <Card className="mt-6">
             <CardHeader>
@@ -561,6 +605,7 @@ const AirtimeTopupPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* Quick Help */}
           <Card className="mt-6">
             <CardHeader>
@@ -604,4 +649,5 @@ const AirtimeTopupPage: React.FC = () => {
     </DashboardLayout>
   )
 }
+
 export default AirtimeTopupPage
