@@ -1,144 +1,271 @@
-import React, { useState, ReactNode } from "react"
-import { Outlet, Link, useLocation } from "react-router-dom"
-import {
-  Menu as MenuIcon,
-  Bell as BellIcon,
-  User as UserIcon,
-  Home as HomeIcon,
-  CreditCard as CreditCardIcon,
-  ArrowRightLeft as TransferIcon,
-  Receipt as ReceiptIcon,
-  FileText as BillsIcon,
-  PiggyBank as SavingsIcon,
-  Settings as SettingsIcon,
-  LogOut as LogOutIcon,
-} from "lucide-react"
-import { useAuth } from "../../contexts/AuthContext"
+import React, { useState } from 'react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import { 
+  Home,
+  CreditCard,
+  ArrowLeftRight,
+  Receipt,
+  Wallet,
+  PiggyBank,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  LogOut,
+  FileText,
+  History
+} from 'lucide-react';
 
-interface DashboardLayoutProps {
-  title?: string
-  children?: ReactNode
-}
+const DashboardLayout = () => {
+  const location = useLocation();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isFundTransferOpen, setIsFundTransferOpen] = useState(false);
+  const [isDepositsOpen, setIsDepositsOpen] = useState(false);
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const location = useLocation()
-  const { user, logout } = useAuth()
+  const mainNavItems = [
+    { name: 'Overview', path: '/dashboard', icon: Home }
+  ];
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/')
-  }
+  const accountItems = [
+    { name: 'Account History', path: '/dashboard/accounts' },
+    { name: 'Statements', path: '/dashboard/statements' }
+  ];
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: HomeIcon },
-    { name: 'Accounts', path: '/dashboard/accounts', icon: CreditCardIcon },
-    { name: 'Transfers', path: '/dashboard/transfers/new', icon: TransferIcon },
-    { name: 'Transactions', path: '/dashboard/transactions', icon: ReceiptIcon },
-    { name: 'Bills Payment', path: '/dashboard/bills/utilities', icon: BillsIcon },
-    { name: 'Savings', path: '/dashboard/savings', icon: SavingsIcon },
-    { name: 'Settings', path: '/dashboard/profile', icon: SettingsIcon },
-  ]
+  const fundTransferItems = [
+    { name: 'Local Transfer', path: '/dashboard/transfers/local' },
+    { name: 'International Transfer', path: '/dashboard/transfers/international' },
+    { name: 'Inter-Account Transfer', path: '/dashboard/transfers/inter-account' }
+  ];
+
+  const depositItems = [
+    { name: 'Cheque Deposit', path: '/dashboard/deposits/cheque' },
+    { name: 'Deposit History', path: '/dashboard/deposits/history' }
+  ];
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:static`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center flex-shrink-0 px-4 h-16 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-blue-600">NexusBank</h2>
+      <aside className="w-64 bg-[#1e3a8a] text-white flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-blue-800">
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-white rounded flex items-center justify-center">
+              <span className="text-blue-900 font-bold text-xl">N</span>
+            </div>
+            <div>
+              <h1 className="font-bold text-lg">NEW NEZER</h1>
+              <p className="text-xs text-blue-200">PERSONAL BANKING</p>
+            </div>
           </div>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto mt-2">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item.path)
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          {/* Dashboard Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2">
+              Dashboard
+            </h3>
+            {mainNavItems.map((item) => {
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    active
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  className={`flex items-center px-3 py-2 rounded-lg mb-1 transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-blue-700 text-white'
+                      : 'text-blue-100 hover:bg-blue-800'
                   }`}
                 >
-                  <Icon className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-gray-400'}`} />
-                  {item.name}
+                  <Icon className="w-5 h-5 mr-3" />
+                  <span className="text-sm">{item.name}</span>
                 </Link>
-              )
+              );
             })}
-          </nav>
+          </div>
 
-          {/* Logout button */}
-          <div className="p-4 border-t border-gray-200">
+          {/* Account Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2">
+              Account
+            </h3>
             <button
-              onClick={logout}
-              className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50"
+              onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-blue-100 hover:bg-blue-800 transition-colors"
             >
-              <LogOutIcon size={20} className="mr-3 text-gray-400" />
-              Logout
+              <div className="flex items-center">
+                <CreditCard className="w-5 h-5 mr-3" />
+                <span className="text-sm">Account</span>
+              </div>
+              {isAccountMenuOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </button>
+            {isAccountMenuOpen && (
+              <div className="ml-8 space-y-1">
+                {accountItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-blue-700 text-white'
+                        : 'text-blue-100 hover:bg-blue-800'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Fund Transfer Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2">
+              Fund Transfer
+            </h3>
+            <button
+              onClick={() => setIsFundTransferOpen(!isFundTransferOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-blue-100 hover:bg-blue-800 transition-colors"
+            >
+              <div className="flex items-center">
+                <ArrowLeftRight className="w-5 h-5 mr-3" />
+                <span className="text-sm">Transfers</span>
+              </div>
+              {isFundTransferOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+            {isFundTransferOpen && (
+              <div className="ml-8 space-y-1">
+                {fundTransferItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-blue-700 text-white'
+                        : 'text-blue-100 hover:bg-blue-800'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Deposits Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2">
+              Deposits
+            </h3>
+            <button
+              onClick={() => setIsDepositsOpen(!isDepositsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-blue-100 hover:bg-blue-800 transition-colors"
+            >
+              <div className="flex items-center">
+                <Wallet className="w-5 h-5 mr-3" />
+                <span className="text-sm">Deposits</span>
+              </div>
+              {isDepositsOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+            {isDepositsOpen && (
+              <div className="ml-8 space-y-1">
+                {depositItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-blue-700 text-white'
+                        : 'text-blue-100 hover:bg-blue-800'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Other Menu Items */}
+          <div className="space-y-1">
+            <Link
+              to="/dashboard/transactions"
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                isActive('/dashboard/transactions')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <Receipt className="w-5 h-5 mr-3" />
+              <span className="text-sm">Transactions</span>
+            </Link>
+            <Link
+              to="/dashboard/bills"
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                isActive('/dashboard/bills')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <FileText className="w-5 h-5 mr-3" />
+              <span className="text-sm">Bills Payment</span>
+            </Link>
+            <Link
+              to="/dashboard/savings"
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                isActive('/dashboard/savings')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <PiggyBank className="w-5 h-5 mr-3" />
+              <span className="text-sm">Savings</span>
+            </Link>
+            <Link
+              to="/dashboard/settings"
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                isActive('/dashboard/settings')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <Settings className="w-5 h-5 mr-3" />
+              <span className="text-sm">Settings</span>
+            </Link>
+          </div>
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-blue-800">
+          <button className="flex items-center w-full px-3 py-2 text-blue-100 hover:bg-blue-800 rounded-lg transition-colors">
+            <LogOut className="w-5 h-5 mr-3" />
+            <span className="text-sm">Logout</span>
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Main content */}
-      <div className="lg:pl-64 flex flex-col flex-1">
-        {/* Header */}
-        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 h-16">
-          <div className="flex items-center justify-between h-full px-4 sm:px-6">
-            <div className="flex items-center">
-              <button
-                className="text-gray-500 hover:text-gray-700 lg:hidden"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <MenuIcon size={24} />
-              </button>
-              <h1 className="ml-4 lg:ml-0 text-lg font-semibold text-gray-900">
-                {title || "Dashboard"}
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="relative text-gray-500 hover:text-gray-700">
-                <BellIcon size={20} />
-                <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-              </button>
-              <Link to="/dashboard/profile" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <UserIcon size={16} className="text-blue-600" />
-                </div>
-                <span className="hidden sm:block text-sm font-medium">
-                  {user?.fullName?.split(' ')[0] || 'User'}
-                </span>
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children || <Outlet />}
-        </main>
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <Outlet />
+      </main>
     </div>
-  )
-}
+  );
+};
 
-export default DashboardLayout
+export default DashboardLayout;
 
 
