@@ -13,13 +13,95 @@ import {
   SettingsIcon,
   FileTextIcon
 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 import { getAccounts } from '../../api/accountApi'
 import { getTransactions } from '../../api/transactionApi'
 import { getNotifications } from '../../api/dashboardApi'
 import { getSavingsGoals } from '../../api/savingsApi'
-// ... existing type definitions ...
+
+// Types
+interface Account {
+  id: string
+  accountNumber: string
+  accountType: string
+  balance: number
+  currency: string
+}
+
+interface Transaction {
+  id: string
+  description?: string
+  amount: number
+  type: "transfer" | "deposit" | "withdraw"
+  createdAt: string
+}
+
+interface Notification {
+  id: string
+  message: string
+  time: string
+  type: string
+}
+
+interface SavingsGoal {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+}
+
 const DashboardHome = () => {
-  // ... existing state and useEffect ...
+  const { user } = useAuth()
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load accounts - expects { accounts: [...] }
+        const accountsRes = await getAccounts()
+        setAccounts(accountsRes.data.accounts || [])
+        
+        // Load transactions - expects { transactions: [...] }
+        const transactionsRes = await getTransactions()
+        const transactionsList = transactionsRes.data.transactions || transactionsRes.data || []
+        setTransactions(Array.isArray(transactionsList) ? transactionsList.slice(0, 5) : [])
+        
+        // Load notifications - handle different response formats
+        try {
+          const notificationsRes = await getNotifications()
+          const notificationsList = notificationsRes.data?.notifications || notificationsRes.data || notificationsRes || []
+          setNotifications(Array.isArray(notificationsList) ? notificationsList : [])
+        } catch (err) {
+          console.error('Notifications error:', err)
+          setNotifications([])
+        }
+        
+        // Load savings goals - expects { data: [...] }
+        try {
+          const savingsRes = await getSavingsGoals()
+          const savingsList = savingsRes.data?.goals || savingsRes.data || []
+          setSavingsGoals(Array.isArray(savingsList) ? savingsList : [])
+        } catch (err) {
+          console.error('Savings goals error:', err)
+          setSavingsGoals([])
+        }
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -30,8 +112,10 @@ const DashboardHome = () => {
       </div>
     )
   }
+
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const availableBalance = accounts.find(acc => acc.accountType === 'Checking')?.balance || 0
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -39,6 +123,7 @@ const DashboardHome = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Financial Overview</h1>
         <p className="text-gray-600">Manage your banking activities</p>
       </div>
+
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Total Balance - Primary Card */}
@@ -56,6 +141,7 @@ const DashboardHome = () => {
             <span>+2.5% from last month</span>
           </div>
         </div>
+
         {/* Available Balance */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-100 mb-4">
@@ -64,6 +150,7 @@ const DashboardHome = () => {
           <p className="text-sm text-gray-600 mb-2">Available Balance</p>
           <p className="text-2xl font-bold text-gray-900">${availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
         </div>
+
         {/* Pending Balance */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-center h-10 w-10 rounded-full bg-yellow-100 mb-4">
@@ -74,6 +161,7 @@ const DashboardHome = () => {
           <p className="text-xs text-gray-500 mt-1">Processing transactions</p>
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
@@ -106,6 +194,7 @@ const DashboardHome = () => {
               </div>
             </div>
           </div>
+
           {/* Recent Transactions */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-6">
@@ -146,6 +235,7 @@ const DashboardHome = () => {
             )}
           </div>
         </div>
+
         {/* Right Column */}
         <div className="space-y-6">
           {/* Account Information */}
@@ -168,6 +258,7 @@ const DashboardHome = () => {
               </div>
             )}
           </div>
+
           {/* Quick Actions */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
@@ -194,6 +285,7 @@ const DashboardHome = () => {
               </Link>
             </div>
           </div>
+
           {/* Notifications */}
           {notifications.length > 0 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
@@ -223,5 +315,6 @@ const DashboardHome = () => {
     </div>
   )
 }
+
 export default DashboardHome
 
