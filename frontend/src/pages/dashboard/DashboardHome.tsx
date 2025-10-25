@@ -70,7 +70,19 @@ const DashboardHome = () => {
         // Load transactions - expects { transactions: [...] }
         const transactionsRes = await getTransactions()
         const transactionsList = transactionsRes.data.transactions || transactionsRes.data || []
-        setTransactions(Array.isArray(transactionsList) ? transactionsList.slice(0, 5) : [])
+        
+        // Map API transactions to match our Transaction interface
+        const mappedTransactions = Array.isArray(transactionsList) 
+          ? transactionsList.map((t: any) => ({
+              id: t.id,
+              description: t.description || t.type || 'Transaction',
+              amount: t.amount,
+              type: t.type || (t.amount > 0 ? 'deposit' : 'withdraw'),
+              createdAt: t.createdAt || t.date || new Date().toISOString()
+            })).slice(0, 5)
+          : []
+        
+        setTransactions(mappedTransactions)
         
         // Load notifications - handle different response formats
         try {
@@ -113,8 +125,8 @@ const DashboardHome = () => {
     )
   }
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
-  const availableBalance = accounts.find(acc => acc.accountType === 'Checking')?.balance || 0
+  const totalBalance = accounts.reduce((sum, acc) => sum + (Number(acc.balance) || 0), 0)
+  const availableBalance = totalBalance // Use total balance as available balance
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -135,7 +147,7 @@ const DashboardHome = () => {
             </div>
           </div>
           <p className="text-sm opacity-90 mb-2">Total Balance</p>
-          <p className="text-3xl font-bold mb-2">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+          <p className="text-3xl font-bold mb-2">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <div className="flex items-center text-sm">
             <TrendingUpIcon size={16} className="mr-1" />
             <span>+2.5% from last month</span>
@@ -148,7 +160,7 @@ const DashboardHome = () => {
             <div className="h-3 w-3 rounded-full bg-green-500" />
           </div>
           <p className="text-sm text-gray-600 mb-2">Available Balance</p>
-          <p className="text-2xl font-bold text-gray-900">${availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-gray-900">${availableBalance.toFixed(2)}</p>
         </div>
 
         {/* Pending Balance */}
@@ -181,7 +193,7 @@ const DashboardHome = () => {
               </div>
               <div className="mb-6">
                 <p className="text-xs opacity-70 mb-1">Available Balance</p>
-                <p className="text-2xl font-bold">${availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold">${availableBalance.toFixed(2)}</p>
               </div>
               <div className="flex justify-between items-end">
                 <div>

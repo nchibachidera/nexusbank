@@ -15,17 +15,28 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { useAuth } from "../../contexts/AuthContext"
+
 interface DashboardLayoutProps {
   title?: string
   children?: ReactNode
 }
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const { user, logout } = useAuth()
+
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
+
+  // Helper function to safely get user ID as string
+  const getUserIdDisplay = () => {
+    if (!user?.id) return '12345678'
+    const idStr = String(user.id)
+    return idStr.slice(0, 8)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Header */}
@@ -41,6 +52,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
             </button>
             <h1 className="text-white text-xl font-bold">NexusBank</h1>
           </div>
+
           {/* Right side */}
           <div className="flex items-center space-x-6">
             <span className="text-white text-sm hidden md:block">
@@ -56,6 +68,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
           </div>
         </div>
       </header>
+
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -63,6 +76,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
       {/* Sidebar */}
       <aside
         className={`fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
@@ -78,11 +92,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">{user?.fullName || 'User'}</p>
-                <p className="text-xs text-gray-500">ID: {user?.id?.slice(0, 8) || '12345678'}</p>
+                <p className="text-xs text-gray-500">ID: {getUserIdDisplay()}</p>
                 <p className="text-xs text-gray-400">{new Date().toLocaleDateString()}</p>
               </div>
             </div>
           </div>
+
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
             {/* Dashboard Section */}
@@ -103,6 +118,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
                 Overview
               </Link>
             </div>
+
             {/* Account Section */}
             <div className="mb-6">
               <p className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -121,6 +137,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
                 Account History
               </Link>
             </div>
+
             {/* Fund Transfer Section */}
             <div className="mb-6">
               <p className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -165,6 +182,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
                 </Link>
               </div>
             </div>
+
             {/* Other Sections */}
             <div className="space-y-1">
               <Link
@@ -200,7 +218,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <PiggyBankIcon className="mr-3 h-5 w-5" />
+                <SavingsIcon className="mr-3 h-5 w-5" />
                 Savings
               </Link>
               <Link
@@ -217,6 +235,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
               </Link>
             </div>
           </nav>
+
           {/* Logout */}
           <div className="p-3 border-t border-gray-200">
             <button
@@ -229,6 +248,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
           </div>
         </div>
       </aside>
+
       {/* Main Content */}
       <main className="pt-16 lg:pl-64 min-h-screen">
         <div className="p-6">
@@ -238,6 +258,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
     </div>
   )
 }
+
 export default DashboardLayout
 
 
