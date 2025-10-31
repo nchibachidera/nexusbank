@@ -24,7 +24,7 @@ import DashboardHome from './pages/dashboard/DashboardHome'
 import AccountsPage from './pages/dashboard/AccountsPage'
 import AccountDetailPage from './pages/dashboard/AccountDetailPage'
 import NewTransferPage from './pages/dashboard/transfers/NewTransferPage'
-import BetweenAccountsPage from './pages/dashboard/transfers/InterAccountTransfer'
+import InterAccountTransfer from './pages/dashboard/transfers/InterAccountTransfer'
 import ExternalTransferPage from './pages/dashboard/transfers/ExternalTransferPage'
 import TransactionsPage from './pages/dashboard/TransactionsPage'
 import TransactionDetailPage from './pages/dashboard/TransactionDetailPage'
@@ -81,8 +81,9 @@ export function App() {
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="accounts/:id" element={<AccountDetailPage />} />
             <Route path="transfers/new" element={<NewTransferPage />} />
-            <Route path="transfers/between-accounts" element={<BetweenAccountsPage />} />
-            <Route path="transfers/external" element={<ExternalTransferPage />} />
+            <Route path="transfers/inter-account" element={<InterAccountTransfer />} />
+            <Route path="transfers/local" element={<ExternalTransferPage />} />
+            <Route path="transfers/international" element={<NewTransferPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="transactions/:id" element={<TransactionDetailPage />} />
             <Route path="bills/utilities" element={<UtilitiesPaymentPage />} />
