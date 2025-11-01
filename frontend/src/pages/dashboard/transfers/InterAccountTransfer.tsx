@@ -12,7 +12,7 @@ interface Account {
   currency: string
 }
 
-const InterAccountTransfer = () => {
+const BetweenAccountsPage = () => {
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
@@ -199,7 +199,7 @@ const InterAccountTransfer = () => {
               <option value="">Select source account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${account.balance.toFixed(2)})
+                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance).toFixed(2)})
                 </option>
               ))}
             </select>
@@ -365,4 +365,4 @@ const InterAccountTransfer = () => {
   )
 }
 
-export default InterAccountTransfer
+export default BetweenAccountsPage

@@ -185,7 +185,7 @@ const ExternalTransferPage = () => {
               <option value="">Select an account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${account.balance.toFixed(2)})
+                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance).toFixed(2)})
                 </option>
               ))}
             </select>
