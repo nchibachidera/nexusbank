@@ -19,6 +19,7 @@ const BetweenAccountsPage = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [fetchingAccounts, setFetchingAccounts] = useState(true)
   
   const [formData, setFormData] = useState({
     fromAccountId: '',
@@ -29,11 +30,26 @@ const BetweenAccountsPage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      setFetchingAccounts(true)
       try {
         const response = await getAccounts()
+        console.log('Accounts response:', response)
         setAccounts(response.data.accounts || [])
-      } catch (err) {
-        console.error('Error fetching accounts:', err)
+      } catch (err: any) {
+        console.error('Full error object:', err)
+        console.error('Error response:', err.response)
+        console.error('Error request:', err.request)
+        console.error('Error config:', err.config)
+        
+        const errorMessage = err.response?.data?.message 
+          || err.response?.statusText 
+          || err.message 
+          || 'Failed to load accounts. Please try again.'
+        
+        setError(`Error loading accounts: ${errorMessage} (Status: ${err.response?.status || 'Unknown'})`)
+        setAccounts([])
+      } finally {
+        setFetchingAccounts(false)
       }
     }
     fetchAccounts()
@@ -108,6 +124,18 @@ const BetweenAccountsPage = () => {
   const fromAccount = accounts.find(acc => acc.id === formData.fromAccountId)
   const toAccount = accounts.find(acc => acc.id === formData.toAccountId)
   const availableToAccounts = accounts.filter(acc => acc.id !== formData.fromAccountId)
+
+  // Loading state
+  if (fetchingAccounts) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a8a] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading accounts...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (success) {
     return (
