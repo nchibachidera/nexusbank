@@ -33,8 +33,21 @@ const BetweenAccountsPage = () => {
       setFetchingAccounts(true)
       try {
         const response = await getAccounts()
-        console.log('Accounts response:', response)
-        setAccounts(response.data.accounts || [])
+        console.log('Full accounts response:', response)
+        console.log('Response data:', response.data)
+        console.log('Accounts array:', response.data.accounts)
+        
+        // Handle different response structures
+        const accountsData = response.data?.accounts || response.data || []
+        console.log('Processed accounts:', accountsData)
+        
+        // Ensure it's an array
+        if (Array.isArray(accountsData)) {
+          setAccounts(accountsData)
+        } else {
+          console.error('Accounts is not an array:', accountsData)
+          setAccounts([])
+        }
       } catch (err: any) {
         console.error('Full error object:', err)
         console.error('Error response:', err.response)

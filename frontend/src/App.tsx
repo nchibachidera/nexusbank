@@ -8,6 +8,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AdminLayout from './components/layout/AdminLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Public Pages
 import HomePage from './pages/HomePage'
@@ -81,7 +82,11 @@ export function App() {
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="accounts/:id" element={<AccountDetailPage />} />
             <Route path="transfers/new" element={<NewTransferPage />} />
-            <Route path="transfers/inter-account" element={<InterAccountTransfer />} />
+            <Route path="transfers/inter-account" element={
+              <ErrorBoundary>
+                <InterAccountTransfer />
+              </ErrorBoundary>
+            } />
             <Route path="transfers/local" element={<ExternalTransferPage />} />
             <Route path="transfers/international" element={<NewTransferPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
@@ -113,4 +118,3 @@ export function App() {
 }
 
 export default App
-
