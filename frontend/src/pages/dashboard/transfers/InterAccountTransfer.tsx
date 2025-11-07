@@ -138,7 +138,7 @@ const BetweenAccountsPage = () => {
   const toAccount = accounts.find(acc => acc.id === formData.toAccountId)
   const availableToAccounts = accounts.filter(acc => acc.id !== formData.fromAccountId)
 
-  // Loading state
+  // Loading state - show spinner while fetching
   if (fetchingAccounts) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -240,7 +240,7 @@ const BetweenAccountsPage = () => {
               <option value="">Select source account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance).toFixed(2)})
+                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance || 0).toFixed(2)})
                 </option>
               ))}
             </select>
@@ -250,7 +250,7 @@ const BetweenAccountsPage = () => {
           {fromAccount && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600">Available Balance</p>
-              <p className="text-2xl font-bold text-gray-900">${Number(fromAccount.balance).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">${Number(fromAccount.balance || 0).toFixed(2)}</p>
             </div>
           )}
 
@@ -270,7 +270,7 @@ const BetweenAccountsPage = () => {
               <option value="">Select destination account</option>
               {availableToAccounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance).toFixed(2)})
+                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance || 0).toFixed(2)})
                 </option>
               ))}
             </select>
