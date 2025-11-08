@@ -31,7 +31,7 @@ const SignupPage: React.FC = () => {
         password: formData.password,
         phone: formData.phone
       }
-      console.log('📤 Sending signup data:', signupData)
+      console.log(' Sending signup data:', signupData)
       await signup(signupData)
     }
   }
