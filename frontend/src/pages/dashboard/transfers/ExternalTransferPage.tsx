@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeftIcon, ArrowRightLeft, AlertCircle, CheckCircle } from 'lucide-react'
+import { ArrowLeftIcon, SendIcon, AlertCircle, CheckCircle, Globe } from 'lucide-react'
 import { getAccounts } from '../../../api/accountApi'
 import { createTransaction } from '../../../api/transactionApi'
 
@@ -12,7 +12,7 @@ interface Account {
   currency: string
 }
 
-const BetweenAccountsPage = () => {
+const ExternalTransferPage = () => {
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
@@ -23,7 +23,9 @@ const BetweenAccountsPage = () => {
   
   const [formData, setFormData] = useState({
     fromAccountId: '',
-    toAccountId: '',
+    recipientName: '',
+    recipientAccountNumber: '',
+    recipientBankName: '',
     amount: '',
     description: ''
   })
@@ -34,19 +36,16 @@ const BetweenAccountsPage = () => {
       try {
         const response = await getAccounts()
         console.log('Accounts response:', response)
-        setAccounts(response.data.accounts || [])
+        const accountsData = response.data?.accounts || response.data || []
+        if (Array.isArray(accountsData)) {
+          setAccounts(accountsData)
+        } else {
+          console.error('Accounts is not an array:', accountsData)
+          setAccounts([])
+        }
       } catch (err: any) {
-        console.error('Full error object:', err)
-        console.error('Error response:', err.response)
-        console.error('Error request:', err.request)
-        console.error('Error config:', err.config)
-        
-        const errorMessage = err.response?.data?.message 
-          || err.response?.statusText 
-          || err.message 
-          || 'Failed to load accounts. Please try again.'
-        
-        setError(`Error loading accounts: ${errorMessage} (Status: ${err.response?.status || 'Unknown'})`)
+        console.error('Error fetching accounts:', err)
+        setError(err.response?.data?.message || 'Failed to load accounts. Please try again.')
         setAccounts([])
       } finally {
         setFetchingAccounts(false)
@@ -67,13 +66,8 @@ const BetweenAccountsPage = () => {
     setError('')
 
     // Validation
-    if (!formData.fromAccountId || !formData.toAccountId || !formData.amount) {
+    if (!formData.fromAccountId || !formData.recipientAccountNumber || !formData.amount || !formData.recipientName) {
       setError('Please fill in all required fields')
-      return
-    }
-
-    if (formData.fromAccountId === formData.toAccountId) {
-      setError('Source and destination accounts must be different')
       return
     }
 
@@ -84,8 +78,8 @@ const BetweenAccountsPage = () => {
     }
 
     const fromAccount = accounts.find(acc => acc.id === formData.fromAccountId)
-    if (fromAccount && fromAccount.balance < amount) {
-      setError('Insufficient balance in source account')
+    if (fromAccount && Number(fromAccount.balance) < amount) {
+      setError('Insufficient balance')
       return
     }
 
@@ -97,14 +91,15 @@ const BetweenAccountsPage = () => {
     setError('')
 
     try {
-      const toAccount = accounts.find(acc => acc.id === formData.toAccountId)
+      const description = formData.description || 
+        `External transfer to ${formData.recipientName} at ${formData.recipientBankName || 'External Bank'}`
 
       await createTransaction({
         transactionType: 'transfer',
         accountId: formData.fromAccountId,
-        toAccountId: formData.toAccountId,
+        toAccountNumber: formData.recipientAccountNumber,
         amount: parseFloat(formData.amount),
-        description: formData.description || `Inter-account transfer to ${toAccount?.accountType}`
+        description
       })
 
       setShowConfirmation(false)
@@ -122,8 +117,6 @@ const BetweenAccountsPage = () => {
   }
 
   const fromAccount = accounts.find(acc => acc.id === formData.fromAccountId)
-  const toAccount = accounts.find(acc => acc.id === formData.toAccountId)
-  const availableToAccounts = accounts.filter(acc => acc.id !== formData.fromAccountId)
 
   // Loading state
   if (fetchingAccounts) {
@@ -146,9 +139,9 @@ const BetweenAccountsPage = () => {
               <CheckCircle size={40} className="text-green-600" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Transfer Successful!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Transfer Submitted!</h2>
           <p className="text-gray-600 mb-6">
-            Your transfer of ${parseFloat(formData.amount).toFixed(2)} has been completed successfully.
+            Your external transfer of ${parseFloat(formData.amount).toFixed(2)} to {formData.recipientName} has been submitted successfully.
           </p>
           <div className="flex justify-center space-x-4">
             <button
@@ -181,10 +174,10 @@ const BetweenAccountsPage = () => {
           Back to Dashboard
         </button>
         <div className="flex items-center space-x-3">
-          <ArrowRightLeft size={28} className="text-[#1e3a8a]" />
+          <Globe size={28} className="text-[#1e3a8a]" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inter-Account Transfer</h1>
-            <p className="text-gray-600">Transfer between your own accounts</p>
+            <h1 className="text-2xl font-bold text-gray-900">External Transfer</h1>
+            <p className="text-gray-600">Send money to external accounts</p>
           </div>
         </div>
       </div>
@@ -195,16 +188,6 @@ const BetweenAccountsPage = () => {
           <div className="flex items-center text-red-800">
             <AlertCircle size={20} className="mr-2" />
             <p>{error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* No Accounts Warning */}
-      {accounts.length < 2 && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center text-yellow-800">
-            <AlertCircle size={20} className="mr-2" />
-            <p>You need at least 2 accounts to make an inter-account transfer.</p>
           </div>
         </div>
       )}
@@ -224,10 +207,10 @@ const BetweenAccountsPage = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
               required
             >
-              <option value="">Select source account</option>
+              <option value="">Select an account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance).toFixed(2)})
+                  {account.accountType} - {account.accountNumber} (Balance: ${Number(account.balance || 0).toFixed(2)})
                 </option>
               ))}
             </select>
@@ -237,75 +220,113 @@ const BetweenAccountsPage = () => {
           {fromAccount && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600">Available Balance</p>
-              <p className="text-2xl font-bold text-gray-900">${fromAccount.balance.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">${Number(fromAccount.balance || 0).toFixed(2)}</p>
             </div>
           )}
 
-          {/* To Account */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              To Account *
-            </label>
-            <select
-              name="toAccountId"
-              value={formData.toAccountId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-              required
-              disabled={!formData.fromAccountId}
-            >
-              <option value="">Select destination account</option>
-              {availableToAccounts.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.accountType} - {account.accountNumber} (Balance: ${account.balance.toFixed(2)})
-                </option>
-              ))}
-            </select>
+          {/* Recipient Information */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recipient Information</h3>
+            
+            <div className="space-y-4">
+              {/* Recipient Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Recipient Name *
+                </label>
+                <input
+                  type="text"
+                  name="recipientName"
+                  value={formData.recipientName}
+                  onChange={handleChange}
+                  placeholder="Enter recipient full name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  required
+                />
+              </div>
+
+              {/* Account Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Number *
+                </label>
+                <input
+                  type="text"
+                  name="recipientAccountNumber"
+                  value={formData.recipientAccountNumber}
+                  onChange={handleChange}
+                  placeholder="Enter recipient account number"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  required
+                />
+              </div>
+
+              {/* Bank Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  name="recipientBankName"
+                  value={formData.recipientBankName}
+                  onChange={handleChange}
+                  placeholder="Enter recipient bank name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Amount */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount *
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-3.5 text-gray-500">$</span>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
+          {/* Transfer Details */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Transfer Details</h3>
+            
+            {/* Amount */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Amount *
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500">$</span>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0.01"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description (Optional)
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="0.00"
-                step="0.01"
-                min="0.01"
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                required
+                placeholder="Enter transfer purpose or description"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description (Optional)
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter transfer description"
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-            />
-          </div>
-
           {/* Info Box */}
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">Transfer Information</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Transfers between your accounts are instant</li>
-              <li>• No fees for inter-account transfers</li>
-              <li>• Daily transfer limit: $10,000</li>
+          <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">⚠️ External Transfer Notice</h4>
+            <ul className="text-sm text-yellow-700 space-y-1">
+              <li>• External transfers typically take 1-3 business days</li>
+              <li>• A $3.00 fee may apply for external transfers</li>
+              <li>• Ensure recipient details are correct</li>
+              <li>• Daily external transfer limit: $5,000</li>
             </ul>
           </div>
 
@@ -313,14 +334,14 @@ const BetweenAccountsPage = () => {
           <div className="flex space-x-4">
             <button
               type="submit"
-              disabled={loading || accounts.length < 2}
+              disabled={loading}
               className="flex-1 bg-[#1e3a8a] text-white py-3 rounded-lg font-semibold hover:bg-[#1e40af] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <span>Processing...</span>
               ) : (
                 <>
-                  <ArrowRightLeft size={20} className="mr-2" />
+                  <SendIcon size={20} className="mr-2" />
                   Continue to Review
                 </>
               )}
@@ -342,7 +363,7 @@ const BetweenAccountsPage = () => {
           <div className="flex items-center justify-center min-h-screen px-4">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowConfirmation(false)}></div>
             <div className="relative bg-white rounded-lg max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Transfer</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm External Transfer</h3>
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">From Account:</span>
@@ -351,16 +372,32 @@ const BetweenAccountsPage = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">To Account:</span>
+                  <span className="text-sm text-gray-500">To:</span>
                   <span className="text-sm font-medium text-gray-900">
-                    {toAccount?.accountType}
+                    {formData.recipientName}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Account Number:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {formData.recipientAccountNumber}
+                  </span>
+                </div>
+                {formData.recipientBankName && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Bank:</span>
+                    <span className="text-sm font-medium text-gray-900">{formData.recipientBankName}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Amount:</span>
                   <span className="text-sm font-medium text-gray-900">
                     ${parseFloat(formData.amount).toFixed(2)}
                   </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Fee:</span>
+                  <span className="text-sm font-medium text-gray-900">$3.00</span>
                 </div>
                 {formData.description && (
                   <div className="flex justify-between">
@@ -393,4 +430,4 @@ const BetweenAccountsPage = () => {
   )
 }
 
-export default BetweenAccountsPage
+export default ExternalTransferPage
