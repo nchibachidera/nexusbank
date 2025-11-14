@@ -43,9 +43,34 @@ const SavingsGoalsPage: React.FC = () => {
     let mounted = true;
     const fetchSavings = async () => {
       try {
-        const res = await api.get<SavingsGoal[]>("/savings");
+        const res = await api.get("/savings");
         if (!mounted) return;
-        const normalized = res.data.map((g) => ({
+        
+        // Log to see what we're getting
+        console.log("Full response:", res);
+        console.log("Response data:", res.data);
+        
+        // Handle different response structures
+        let goalsData: any[] = [];
+        
+        if (Array.isArray(res.data)) {
+          // If res.data is already an array
+          goalsData = res.data;
+        } else if (res.data.savingsGoals && Array.isArray(res.data.savingsGoals)) {
+          // If it's { savingsGoals: [...] }
+          goalsData = res.data.savingsGoals;
+        } else if (res.data.goals && Array.isArray(res.data.goals)) {
+          // If it's { goals: [...] }
+          goalsData = res.data.goals;
+        } else if (res.data.data && Array.isArray(res.data.data)) {
+          // If it's { data: [...] }
+          goalsData = res.data.data;
+        } else {
+          console.warn("Unexpected response structure:", res.data);
+          goalsData = [];
+        }
+        
+        const normalized = goalsData.map((g) => ({
           ...g,
           targetAmount: Number(g.targetAmount),
           currentAmount: Number(g.currentAmount ?? 0),
@@ -56,8 +81,10 @@ const SavingsGoalsPage: React.FC = () => {
               : Math.round(((Number(g.currentAmount ?? 0) / Number(g.targetAmount || 1)) * 100) || 0),
         }));
         setSavingsGoals(normalized);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching savings goals:", err);
+        console.error("Error response:", err.response);
+        setSavingsGoals([]); // Set empty array on error
       } finally {
         if (mounted) setLoading(false);
       }
@@ -96,18 +123,30 @@ const SavingsGoalsPage: React.FC = () => {
         autoSaveFrequency: formData.autoSaveFrequency,
       };
 
-      const res = await api.post<SavingsGoal>("/savings", payload);
+      const res = await api.post("/savings", payload);
+      
+      console.log("Create response:", res.data);
+
+      // Handle different response structures
+      let newGoalData = res.data;
+      if (res.data.savingsGoal) {
+        newGoalData = res.data.savingsGoal;
+      } else if (res.data.goal) {
+        newGoalData = res.data.goal;
+      } else if (res.data.data) {
+        newGoalData = res.data.data;
+      }
 
       // Normalize returned goal
       const newGoal: SavingsGoal = {
-        ...res.data,
-        targetAmount: Number(res.data.targetAmount),
-        currentAmount: Number(res.data.currentAmount ?? 0),
-        autoSaveAmount: res.data.autoSaveAmount ? Number(res.data.autoSaveAmount) : 0,
+        ...newGoalData,
+        targetAmount: Number(newGoalData.targetAmount),
+        currentAmount: Number(newGoalData.currentAmount ?? 0),
+        autoSaveAmount: newGoalData.autoSaveAmount ? Number(newGoalData.autoSaveAmount) : 0,
         progress:
-          typeof res.data.progress === "number"
-            ? res.data.progress
-            : Math.round(((Number(res.data.currentAmount ?? 0) / Number(res.data.targetAmount || 1)) * 100) || 0),
+          typeof newGoalData.progress === "number"
+            ? newGoalData.progress
+            : Math.round(((Number(newGoalData.currentAmount ?? 0) / Number(newGoalData.targetAmount || 1)) * 100) || 0),
       };
 
       setSavingsGoals((prev) => [...prev, newGoal]);
@@ -123,15 +162,24 @@ const SavingsGoalsPage: React.FC = () => {
         autoSaveAmount: "",
         autoSaveFrequency: "Monthly",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating savings goal:", err);
+      console.error("Error response:", err.response);
       // Optionally show a toast or error state
+      alert(err.response?.data?.message || "Failed to create savings goal. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <p>Loading savings goals...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="ml-4 text-gray-600">Loading savings goals...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -149,84 +197,98 @@ const SavingsGoalsPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Empty State */}
+      {savingsGoals.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <PiggyBankIcon size={48} className="mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Savings Goals Yet</h3>
+          <p className="text-gray-600 mb-4">Create your first savings goal to start tracking your progress</p>
+          <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            <PlusIcon size={16} className="mr-1" /> Create Your First Goal
+          </Button>
+        </div>
+      )}
+
       {/* Goals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {savingsGoals.map((goal) => (
-          <div
-            key={goal.id}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-5"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-semibold text-gray-900">{goal.name}</h3>
-                <p className="text-sm text-gray-500">{goal.category}</p>
+      {savingsGoals.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {savingsGoals.map((goal) => (
+            <div
+              key={goal.id}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{goal.name}</h3>
+                  <p className="text-sm text-gray-500">{goal.category}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <PiggyBankIcon size={20} className="text-green-600" />
+                </div>
               </div>
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <PiggyBankIcon size={20} className="text-green-600" />
-              </div>
-            </div>
 
-            <div className="mb-4">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm text-gray-500">Progress</span>
-                <span className="text-sm font-medium">{goal.progress ?? 0}%</span>
+              <div className="mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-500">Progress</span>
+                  <span className="text-sm font-medium">{goal.progress ?? 0}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 rounded-full"
+                    style={{ width: `${goal.progress ?? 0}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-green-500 rounded-full"
-                  style={{ width: `${goal.progress ?? 0}%` }}
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-500">Current</p>
-                <p className="text-lg font-medium text-gray-900">
-                  ${goal.currentAmount.toLocaleString()}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-500">Current</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    ${Number(goal.currentAmount || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Target</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    ${Number(goal.targetAmount || 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-xs text-gray-500">Deadline</p>
+                <p className="text-sm text-gray-700">
+                  {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : "—"}
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Target</p>
-                <p className="text-lg font-medium text-gray-900">
-                  ${goal.targetAmount.toLocaleString()}
-                </p>
+
+              {goal.autoSave && (
+                <div className="mb-4 bg-blue-50 p-2 rounded-lg flex items-center">
+                  <TrendingUpIcon size={16} className="text-blue-600 mr-2" />
+                  <p className="text-xs text-blue-800">
+                    Auto-saving ${Number(goal.autoSaveAmount ?? 0).toLocaleString()} {goal.autoSaveFrequency}
+                  </p>
+                </div>
+              )}
+
+              <div className="border-t border-gray-100 pt-4 mt-2 flex justify-between">
+                <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                  <EditIcon size={14} className="mr-1" /> Edit
+                </button>
+                <button className="text-red-600 hover:text-red-800 text-sm flex items-center">
+                  <TrashIcon size={14} className="mr-1" /> Delete
+                </button>
               </div>
             </div>
-
-            <div className="mb-4">
-              <p className="text-xs text-gray-500">Deadline</p>
-              <p className="text-sm text-gray-700">
-                {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : "—"}
-              </p>
-            </div>
-
-            {goal.autoSave && (
-              <div className="mb-4 bg-blue-50 p-2 rounded-lg flex items-center">
-                <TrendingUpIcon size={16} className="text-blue-600 mr-2" />
-                <p className="text-xs text-blue-800">
-                  Auto-saving ${goal.autoSaveAmount ?? 0} {goal.autoSaveFrequency}
-                </p>
-              </div>
-            )}
-
-            <div className="border-t border-gray-100 pt-4 mt-2 flex justify-between">
-              <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                <EditIcon size={14} className="mr-1" /> Edit
-              </button>
-              <button className="text-red-600 hover:text-red-800 text-sm flex items-center">
-                <TrashIcon size={14} className="mr-1" /> Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* New Goal Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity">
+            <div className="fixed inset-0 transition-opacity" onClick={() => setIsModalOpen(false)}>
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
