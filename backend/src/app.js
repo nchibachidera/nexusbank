@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Test route to verify backend connection
+//  Test route to verify backend connection
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is connected successfully!' });
 });
