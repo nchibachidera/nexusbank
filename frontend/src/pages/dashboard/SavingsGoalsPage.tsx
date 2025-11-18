@@ -114,14 +114,14 @@ const SavingsGoalsPage: React.FC = () => {
 
     try {
       const payload = {
-        name: formData.name,
+        goalName: formData.name,  // ✅ Changed from 'name' to 'goalName'
         targetAmount: Number(formData.targetAmount || 0),
         deadline: formData.deadline || null,
-        category: formData.category,
-        autoSave: Boolean(formData.autoSave),
-        autoSaveAmount: formData.autoSave ? Number(formData.autoSaveAmount || 0) : 0,
-        autoSaveFrequency: formData.autoSaveFrequency,
+        currentAmount: 0,  // ✅ Added initial amount
       };
+
+      console.log("Sending payload:", payload);
+      console.log("Form data before conversion:", formData);
 
       const res = await api.post("/savings", payload);
       
