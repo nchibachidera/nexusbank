@@ -15,6 +15,7 @@ import TransactionModel from './transactionModel.js';
 import SavingsGoalsModel from './savingsGoalsModel.js';
 import ReferralModel from './referralModel.js';
 import AdminModel from './adminModel.js';
+import Notification from './Notification.js';
 
 const User = UserModel(sequelize);
 const Account = AccountModel(sequelize);
@@ -36,6 +37,8 @@ User.hasMany(Referral, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Referral.belongsTo(User, { foreignKey: 'userId' });
 
 export { sequelize, User, Account, Transaction, SavingsGoal, Referral, Admin };
+
+export { User, Account, Transaction, SavingsGoal, Notification };
 
 (async () => {
   try {
