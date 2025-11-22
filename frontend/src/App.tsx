@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
-import { testBackend } from './api/testApi'   // ✅ import the test function
+import { NotificationProvider } from './contexts/NotificationContext'
+import { testBackend } from './api/testApi'
 
 // Components
 import Navbar from './components/Navbar'
@@ -57,7 +58,6 @@ const PublicLayout = ({ children }: { children: React.ReactNode }) => (
 )
 
 export function App() {
-  // ✅ Run this once when the app loads to test backend connection
   useEffect(() => {
     testBackend()
   }, [])
@@ -65,53 +65,55 @@ export function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
-          <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
-          <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
-          <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
-          <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
-          <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
-          <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
-          <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
+        <NotificationProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+            <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+            <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+            <Route path="/faq" element={<PublicLayout><FAQPage /></PublicLayout>} />
+            <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
+            <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
+            <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
+            <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
 
-          {/* Dashboard Routes */}
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
-            <Route path="accounts" element={<AccountsPage />} />
-            <Route path="accounts/:id" element={<AccountDetailPage />} />
-            <Route path="transfers/new" element={<NewTransferPage />} />
-            <Route path="transfers/inter-account" element={
-              <ErrorBoundary>
-                <InterAccountTransfer />
-              </ErrorBoundary>
-            } />
-            <Route path="transfers/local" element={<ExternalTransferPage />} />
-            <Route path="transfers/international" element={<NewTransferPage />} />
-            <Route path="transactions" element={<TransactionsPage />} />
-            <Route path="transactions/:id" element={<TransactionDetailPage />} />
-            <Route path="bills/utilities" element={<UtilitiesPaymentPage />} />
-            <Route path="bills/airtime" element={<AirtimeTopupPage />} />
-            <Route path="bills/subscriptions" element={<SubscriptionsPage />} />
-            <Route path="savings" element={<SavingsGoalsPage />} />
-            <Route path="rewards" element={<RewardsPage />} />
-            <Route path="referrals" element={<ReferralsPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="security" element={<SecurityPage />} />
-          </Route>
+            {/* Dashboard Routes */}
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardHome />} />
+              <Route path="accounts" element={<AccountsPage />} />
+              <Route path="accounts/:id" element={<AccountDetailPage />} />
+              <Route path="transfers/new" element={<NewTransferPage />} />
+              <Route path="transfers/inter-account" element={
+                <ErrorBoundary>
+                  <InterAccountTransfer />
+                </ErrorBoundary>
+              } />
+              <Route path="transfers/local" element={<ExternalTransferPage />} />
+              <Route path="transfers/international" element={<NewTransferPage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="transactions/:id" element={<TransactionDetailPage />} />
+              <Route path="bills/utilities" element={<UtilitiesPaymentPage />} />
+              <Route path="bills/airtime" element={<AirtimeTopupPage />} />
+              <Route path="bills/subscriptions" element={<SubscriptionsPage />} />
+              <Route path="savings" element={<SavingsGoalsPage />} />
+              <Route path="rewards" element={<RewardsPage />} />
+              <Route path="referrals" element={<ReferralsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="security" element={<SecurityPage />} />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagementPage />} />
-            <Route path="users/:id" element={<UserDetailPage />} />
-            <Route path="transactions" element={<TransactionMonitoringPage />} />
-            <Route path="alerts" element={<FraudAlertsPage />} />
-            <Route path="logs" element={<AuditLogsPage />} />
-            <Route path="roles" element={<RolesPermissionsPage />} />
-          </Route>
-        </Routes>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UserManagementPage />} />
+              <Route path="users/:id" element={<UserDetailPage />} />
+              <Route path="transactions" element={<TransactionMonitoringPage />} />
+              <Route path="alerts" element={<FraudAlertsPage />} />
+              <Route path="logs" element={<AuditLogsPage />} />
+              <Route path="roles" element={<RolesPermissionsPage />} />
+            </Route>
+          </Routes>
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   )

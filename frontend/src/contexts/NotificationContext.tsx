@@ -1,13 +1,14 @@
- import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getNotifications } from '../api/notificationApi';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getNotifications as fetchNotificationsAPI } from '../api/notificationApi';
 
 interface Notification {
   id: string;
-  type: string;
+  type: 'transaction' | 'account' | 'security' | 'system' | 'savings';
   title: string;
   message: string;
   isRead: boolean;
   actionUrl?: string;
+  metadata?: any;
   createdAt: string;
 }
 
@@ -29,11 +30,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await getNotifications();
-      setNotifications(response.data.notifications);
-      setUnreadCount(response.data.unreadCount);
+      const response = await fetchNotificationsAPI();
+      setNotifications(response.data.notifications || []);
+      setUnreadCount(response.data.unreadCount || 0);
     } catch (err) {
       console.error('Error fetching notifications:', err);
+      // Don't throw error, just log it
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoading(false);
     }

@@ -1,9 +1,8 @@
 import React, { useState, ReactNode } from "react"
-import { Outlet, Link, useLocation } from "react-router-dom"
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import {
   Menu as MenuIcon,
   Bell as BellIcon,
-  User as UserIcon,
   Home as HomeIcon,
   CreditCard as CreditCardIcon,
   ArrowRightLeft as TransferIcon,
@@ -12,9 +11,12 @@ import {
   PiggyBank as SavingsIcon,
   Settings as SettingsIcon,
   LogOut as LogOutIcon,
-  ChevronDown,
+  AlertCircle,
+  Info,
 } from "lucide-react"
 import { useAuth } from "../../contexts/AuthContext"
+import { useNotifications } from "../../contexts/NotificationContext"
+import { markNotificationAsRead, markAllNotificationsAsRead } from "../../api/notificationApi"
 
 interface DashboardLayoutProps {
   title?: string
@@ -23,18 +25,75 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const { notifications, unreadCount, refreshNotifications } = useNotifications()
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
-  // Helper function to safely get user ID as string
   const getUserIdDisplay = () => {
     if (!user?.id) return '12345678'
     const idStr = String(user.id)
     return idStr.slice(0, 8)
+  }
+
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      // Mark as read
+      if (!notification.isRead) {
+        await markNotificationAsRead(notification.id)
+        refreshNotifications()
+      }
+
+      // Navigate to action URL if exists
+      if (notification.actionUrl) {
+        navigate(notification.actionUrl)
+      }
+
+      setNotificationsOpen(false)
+    } catch (err) {
+      console.error('Error handling notification click:', err)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead()
+      refreshNotifications()
+    } catch (err) {
+      console.error('Error marking all as read:', err)
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'transaction':
+        return <ReceiptIcon size={18} className="text-blue-600" />
+      case 'account':
+        return <CreditCardIcon size={18} className="text-green-600" />
+      case 'security':
+        return <AlertCircle size={18} className="text-red-600" />
+      case 'savings':
+        return <SavingsIcon size={18} className="text-purple-600" />
+      default:
+        return <Info size={18} className="text-gray-600" />
+    }
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (seconds < 60) return 'Just now'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+    return date.toLocaleDateString()
   }
 
   return (
@@ -58,11 +117,107 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ title, children }) =>
             <span className="text-white text-sm hidden md:block">
               Welcome {user?.fullName || 'User'}
             </span>
-            <button className="relative text-white hover:text-gray-200">
-              <BellIcon size={20} />
-              <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
-            </button>
-            <Link to="/dashboard/profile" className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-[#1e3a8a] font-semibold text-sm">
+            
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative text-white hover:text-gray-200 transition-colors"
+              >
+                <BellIcon size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {notificationsOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[32rem] flex flex-col">
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="overflow-y-auto flex-1">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                          <BellIcon size={48} className="mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm font-medium">No notifications yet</p>
+                          <p className="text-xs text-gray-400 mt-1">We'll notify you when something happens</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-100">
+                          {notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`w-full p-4 hover:bg-gray-50 transition-colors text-left ${
+                                !notification.isRead ? 'bg-blue-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  {getNotificationIcon(notification.type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {notification.title}
+                                    </p>
+                                    {!notification.isRead && (
+                                      <span className="ml-2 h-2 w-2 bg-blue-600 rounded-full flex-shrink-0"></span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {formatTimeAgo(notification.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <div className="p-3 border-t border-gray-200 text-center">
+                        <button 
+                          onClick={() => {
+                            navigate('/dashboard/notifications')
+                            setNotificationsOpen(false)
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View all notifications
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <Link to="/dashboard/profile" className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-[#1e3a8a] font-semibold text-sm hover:bg-gray-100 transition-colors">
               {user?.fullName?.charAt(0) || 'U'}
             </Link>
           </div>

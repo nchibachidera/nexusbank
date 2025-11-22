@@ -1,6 +1,22 @@
-import { Transaction, Account } from '../models/index.js';
+import { Transaction, Account, Notification } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sequelize } from '../models/index.js';
+
+// Helper function to create notification
+const createNotification = async (userId, data) => {
+  try {
+    await Notification.create({
+      userId,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      actionUrl: data.actionUrl || null,
+      metadata: data.metadata || {}
+    });
+  } catch (err) {
+    console.error('Error creating notification:', err);
+  }
+};
 
 // Get all transactions for logged-in user
 export const getTransactions = async (req, res) => {
@@ -137,7 +153,7 @@ export const createTransaction = async (req, res) => {
       
       // Create debit transaction for sender
       console.log('📝 Creating transfer_out transaction for account', accountIdInt);
-      await Transaction.create({
+      const senderTransaction = await Transaction.create({
         accountId: accountIdInt,
         transactionType: 'transfer_out',
         amount,
@@ -147,7 +163,7 @@ export const createTransaction = async (req, res) => {
       
       // Create credit transaction for receiver
       console.log('📝 Creating transfer_in transaction for account', toAccount.id);
-      await Transaction.create({
+      const receiverTransaction = await Transaction.create({
         accountId: toAccount.id,
         transactionType: 'transfer_in',
         amount,
@@ -158,6 +174,38 @@ export const createTransaction = async (req, res) => {
       console.log('💾 Committing transaction...');
       await t.commit();
       console.log('✅ Transfer completed successfully!');
+      
+      // CREATE NOTIFICATIONS (after commit)
+      // Notification for sender
+      await createNotification(userId, {
+        type: 'transaction',
+        title: 'Transfer Sent',
+        message: `You sent $${amount.toFixed(2)} to account ${toAccount.accountNumber}`,
+        actionUrl: `/dashboard/transactions/${senderTransaction.id}`,
+        metadata: {
+          transactionId: senderTransaction.id,
+          amount: amount,
+          type: 'transfer_out',
+          toAccount: toAccount.accountNumber
+        }
+      });
+      
+      // Notification for receiver (if they're also a user in our system)
+      if (toAccount.userId) {
+        await createNotification(toAccount.userId, {
+          type: 'transaction',
+          title: 'Transfer Received',
+          message: `You received $${amount.toFixed(2)} from account ${account.accountNumber}`,
+          actionUrl: `/dashboard/transactions/${receiverTransaction.id}`,
+          metadata: {
+            transactionId: receiverTransaction.id,
+            amount: amount,
+            type: 'transfer_in',
+            fromAccount: account.accountNumber
+          }
+        });
+      }
+      
       return res.status(201).json({ message: 'Transfer completed successfully' });
       
     } else if (transactionType === 'deposit') {
@@ -174,6 +222,20 @@ export const createTransaction = async (req, res) => {
       }, { transaction: t });
       
       await t.commit();
+      
+      // CREATE NOTIFICATION
+      await createNotification(userId, {
+        type: 'transaction',
+        title: 'Deposit Successful',
+        message: `Your deposit of $${amount.toFixed(2)} was successful`,
+        actionUrl: `/dashboard/transactions/${transaction.id}`,
+        metadata: {
+          transactionId: transaction.id,
+          amount: amount,
+          type: 'deposit'
+        }
+      });
+      
       return res.status(201).json({ transaction, message: 'Deposit completed successfully' });
       
     } else if (transactionType === 'withdraw') {
@@ -196,6 +258,20 @@ export const createTransaction = async (req, res) => {
       }, { transaction: t });
       
       await t.commit();
+      
+      // CREATE NOTIFICATION
+      await createNotification(userId, {
+        type: 'transaction',
+        title: 'Withdrawal Successful',
+        message: `Your withdrawal of $${amount.toFixed(2)} was successful`,
+        actionUrl: `/dashboard/transactions/${transaction.id}`,
+        metadata: {
+          transactionId: transaction.id,
+          amount: amount,
+          type: 'withdraw'
+        }
+      });
+      
       return res.status(201).json({ transaction, message: 'Withdrawal completed successfully' });
       
     } else {
