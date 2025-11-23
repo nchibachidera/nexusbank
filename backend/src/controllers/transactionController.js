@@ -47,6 +47,51 @@ export const getTransactions = async (req, res) => {
   }
 };
 
+// Get single transaction by ID
+export const getTransactionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Get user's account IDs
+    const userAccounts = await Account.findAll({ 
+      where: { userId },
+      attributes: ['id']
+    });
+    
+    const accountIds = userAccounts.map(acc => acc.id);
+
+    // Find transaction that belongs to user's accounts (without include)
+    const transaction = await Transaction.findOne({
+      where: { 
+        id,
+        accountId: accountIds 
+      }
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    // Manually fetch the account info
+    const account = await Account.findOne({
+      where: { id: transaction.accountId },
+      attributes: ['id', 'accountNumber', 'accountType', 'balance']
+    });
+
+    // Add account info to response
+    const transactionWithAccount = {
+      ...transaction.toJSON(),
+      account: account
+    };
+
+    return res.json(transactionWithAccount);
+  } catch (err) {
+    console.error('Error fetching transaction:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Get transactions for a specific account
 export const getTransactionsByAccount = async (req, res) => {
   try {
@@ -213,7 +258,7 @@ export const createTransaction = async (req, res) => {
       await account.update({ balance: parseFloat(account.balance) + amount }, { transaction: t });
       
       // Create transaction record
-      const transaction = await Transaction.create({
+      const newTransaction = await Transaction.create({
         accountId: accountIdInt,
         transactionType: 'deposit',
         amount,
@@ -228,15 +273,15 @@ export const createTransaction = async (req, res) => {
         type: 'transaction',
         title: 'Deposit Successful',
         message: `Your deposit of $${amount.toFixed(2)} was successful`,
-        actionUrl: `/dashboard/transactions/${transaction.id}`,
+        actionUrl: `/dashboard/transactions/${newTransaction.id}`,
         metadata: {
-          transactionId: transaction.id,
+          transactionId: newTransaction.id,
           amount: amount,
           type: 'deposit'
         }
       });
       
-      return res.status(201).json({ transaction, message: 'Deposit completed successfully' });
+      return res.status(201).json({ transaction: newTransaction, message: 'Deposit completed successfully' });
       
     } else if (transactionType === 'withdraw') {
       // Check sufficient balance
@@ -249,7 +294,7 @@ export const createTransaction = async (req, res) => {
       await account.update({ balance: parseFloat(account.balance) - amount }, { transaction: t });
       
       // Create transaction record
-      const transaction = await Transaction.create({
+      const newTransaction = await Transaction.create({
         accountId: accountIdInt,
         transactionType: 'withdraw',
         amount,
@@ -264,15 +309,15 @@ export const createTransaction = async (req, res) => {
         type: 'transaction',
         title: 'Withdrawal Successful',
         message: `Your withdrawal of $${amount.toFixed(2)} was successful`,
-        actionUrl: `/dashboard/transactions/${transaction.id}`,
+        actionUrl: `/dashboard/transactions/${newTransaction.id}`,
         metadata: {
-          transactionId: transaction.id,
+          transactionId: newTransaction.id,
           amount: amount,
           type: 'withdraw'
         }
       });
       
-      return res.status(201).json({ transaction, message: 'Withdrawal completed successfully' });
+      return res.status(201).json({ transaction: newTransaction, message: 'Withdrawal completed successfully' });
       
     } else {
       await t.rollback();
