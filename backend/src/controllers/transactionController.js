@@ -326,7 +326,7 @@ export const createTransaction = async (req, res) => {
     
   } catch (err) {
     await t.rollback();
-    console.error('❌ Error creating transaction:', err);
+    console.error(' Error creating transaction:', err);
     console.error('Error stack:', err.stack);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
