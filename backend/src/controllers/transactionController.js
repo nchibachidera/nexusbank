@@ -218,7 +218,7 @@ export const createTransaction = async (req, res) => {
       
       console.log('💾 Committing transaction...');
       await t.commit();
-      console.log('✅ Transfer completed successfully!');
+      console.log(' Transfer completed successfully!');
       
       // CREATE NOTIFICATIONS (after commit)
       // Notification for sender
