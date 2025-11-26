@@ -172,7 +172,7 @@ export const createTransaction = async (req, res) => {
         toAccount = await Account.findOne({ where: { accountNumber: req.body.toAccountNumber }, transaction: t });
       }
       
-      console.log('📝 Recipient account found:', toAccount ? `ID: ${toAccount.id}, Balance: ${toAccount.balance}, AccountNumber: ${toAccount.accountNumber}` : 'NOT FOUND');
+      console.log(' Recipient account found:', toAccount ? `ID: ${toAccount.id}, Balance: ${toAccount.balance}, AccountNumber: ${toAccount.accountNumber}` : 'NOT FOUND');
       
       if (!toAccount) {
         await t.rollback();
