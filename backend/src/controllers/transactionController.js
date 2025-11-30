@@ -126,7 +126,7 @@ export const createTransaction = async (req, res) => {
     const userId = req.user.id;
     const { transactionType, amount, accountId, toAccountId, description } = req.body;
     
-    console.log('🔵 CREATE TRANSACTION CALLED');
+    console.log(' CREATE TRANSACTION CALLED');
     console.log('📥 Request body:', req.body);
     console.log('📥 accountId:', accountId, 'type:', typeof accountId);
     
