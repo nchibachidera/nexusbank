@@ -128,7 +128,7 @@ export const createTransaction = async (req, res) => {
     
     console.log(' CREATE TRANSACTION CALLED');
     console.log(' Request body:', req.body);
-    console.log('📥 accountId:', accountId, 'type:', typeof accountId);
+    console.log(' accountId:', accountId, 'type:', typeof accountId);
     
     // Convert accountId to integer
     const accountIdInt = parseInt(accountId);
