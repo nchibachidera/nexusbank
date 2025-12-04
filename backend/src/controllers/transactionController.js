@@ -134,7 +134,7 @@ export const createTransaction = async (req, res) => {
     const accountIdInt = parseInt(accountId);
     const toAccountIdInt = toAccountId ? parseInt(toAccountId) : null;
     
-    console.log('🔢 Parsed accountIdInt:', accountIdInt, 'toAccountIdInt:', toAccountIdInt);
+    console.log(' Parsed accountIdInt:', accountIdInt, 'toAccountIdInt:', toAccountIdInt);
     
     // Validate required fields
     if (!transactionType || !amount || !accountIdInt || isNaN(accountIdInt)) {
