@@ -148,7 +148,7 @@ export const createTransaction = async (req, res) => {
     }
     
     // Verify account belongs to user
-    console.log('🔍 Looking for source account - ID:', accountIdInt, 'userId:', userId);
+    console.log(' Looking for source account - ID:', accountIdInt, 'userId:', userId);
     const account = await Account.findOne({ where: { id: accountIdInt, userId }, transaction: t });
     console.log(' Source account found:', account ? `ID: ${account.id}, Balance: ${account.balance}, Type: ${account.accountType}` : 'NOT FOUND');
     
