@@ -159,7 +159,7 @@ export const createTransaction = async (req, res) => {
     
     // Handle different transaction types
     if (transactionType === 'transfer') {
-      console.log('💸 Processing transfer...');
+      console.log(' Processing transfer...');
       
       // Check if toAccountId is provided, if not check for accountNumber
       let toAccount;
