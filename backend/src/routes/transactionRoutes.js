@@ -12,7 +12,7 @@ const router = express.Router();
 // Add logging middleware
 router.use((req, res, next) => {
   console.log('📍 Transaction route hit:', req.method, req.path);
-  console.log('🔵 Request body:', req.body);
+  console.log(' Request body:', req.body);
   next();
 });
 
