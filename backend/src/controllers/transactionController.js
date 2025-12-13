@@ -216,7 +216,7 @@ export const createTransaction = async (req, res) => {
         status: 'completed'
       }, { transaction: t });
       
-      console.log('💾 Committing transaction...');
+      console.log(' Committing transaction...');
       await t.commit();
       console.log(' Transfer completed successfully!');
       
