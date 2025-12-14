@@ -197,7 +197,7 @@ export const createTransaction = async (req, res) => {
       await toAccount.update({ balance: newDestBalance }, { transaction: t });
       
       // Create debit transaction for sender
-      console.log('📝 Creating transfer_out transaction for account', accountIdInt);
+      console.log(' Creating transfer_out transaction for account', accountIdInt);
       const senderTransaction = await Transaction.create({
         accountId: accountIdInt,
         transactionType: 'transfer_out',
