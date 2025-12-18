@@ -165,7 +165,7 @@ export const createTransaction = async (req, res) => {
       let toAccount;
       
       if (toAccountIdInt) {
-        console.log('🔍 Finding recipient by ID:', toAccountIdInt);
+        console.log(' Finding recipient by ID:', toAccountIdInt);
         toAccount = await Account.findOne({ where: { id: toAccountIdInt }, transaction: t });
       } else if (req.body.toAccountNumber) {
         console.log(' Finding recipient by account number:', req.body.toAccountNumber);
