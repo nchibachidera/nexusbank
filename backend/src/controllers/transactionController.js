@@ -207,7 +207,7 @@ export const createTransaction = async (req, res) => {
       }, { transaction: t });
       
       // Create credit transaction for receiver
-      console.log('📝 Creating transfer_in transaction for account', toAccount.id);
+      console.log(' Creating transfer_in transaction for account', toAccount.id);
       const receiverTransaction = await Transaction.create({
         accountId: toAccount.id,
         transactionType: 'transfer_in',
