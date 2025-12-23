@@ -9,7 +9,7 @@ type ButtonProps = {
   className?: string
   onClick?: () => void
   type?: 'button' | 'submit' | 'reset'
-  loading?: boolean   // ✅ added loading prop
+  loading?: boolean   //  added loading prop
 }
 
 const Button: React.FC<ButtonProps> = ({ 
