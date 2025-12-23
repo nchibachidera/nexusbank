@@ -20,7 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   onClick,
   type = 'button',
-  loading = false     // ✅ default false
+  loading = false     //  default false
 }) => {
   const baseClasses =
     'inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
