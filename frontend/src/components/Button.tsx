@@ -52,7 +52,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={classes}
       onClick={onClick}
-      disabled={loading}  // ✅ disable while loading
+      disabled={loading}  //  disable while loading
     >
       {loading ? 'Loading...' : children}  {/* ✅ show loading text */}
     </button>
