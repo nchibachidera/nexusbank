@@ -190,7 +190,7 @@ export const createTransaction = async (req, res) => {
       const newSourceBalance = parseFloat(account.balance) - amount;
       const newDestBalance = parseFloat(toAccount.balance) + amount;
       
-      console.log('⬇️ Updating source account', account.id, 'balance from', account.balance, 'to', newSourceBalance);
+      console.log('⬇ Updating source account', account.id, 'balance from', account.balance, 'to', newSourceBalance);
       await account.update({ balance: newSourceBalance }, { transaction: t });
       
       console.log('⬆️ Updating recipient account', toAccount.id, 'balance from', toAccount.balance, 'to', newDestBalance);
