@@ -193,7 +193,7 @@ export const createTransaction = async (req, res) => {
       console.log('⬇ Updating source account', account.id, 'balance from', account.balance, 'to', newSourceBalance);
       await account.update({ balance: newSourceBalance }, { transaction: t });
       
-      console.log('⬆️ Updating recipient account', toAccount.id, 'balance from', toAccount.balance, 'to', newDestBalance);
+      console.log('⬆ Updating recipient account', toAccount.id, 'balance from', toAccount.balance, 'to', newDestBalance);
       await toAccount.update({ balance: newDestBalance }, { transaction: t });
       
       // Create debit transaction for sender
