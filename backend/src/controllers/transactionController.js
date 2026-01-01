@@ -180,7 +180,7 @@ export const createTransaction = async (req, res) => {
       }
       
       // Check sufficient balance
-      console.log('💰 Checking balance: Need', amount, 'Have', parseFloat(account.balance));
+      console.log(' Checking balance: Need', amount, 'Have', parseFloat(account.balance));
       if (parseFloat(account.balance) < amount) {
         await t.rollback();
         return res.status(400).json({ message: 'Insufficient balance' });
