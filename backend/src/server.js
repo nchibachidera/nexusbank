@@ -12,7 +12,7 @@ const start = async () => {
     // Sync models - create tables if not exist
     await sequelize.sync({ alter: false });
     console.log(' Models synchronized');
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
   } catch (err) {
     console.error('Unable to start server:', err);
     process.exit(1);
