@@ -17,7 +17,7 @@ const createNotification = async (userId, data) => {
     console.error('Error creating notification:', err);
   }
 };
-
+k
 // Get all transactions for logged-in user
 export const getTransactions = async (req, res) => {
   try {
