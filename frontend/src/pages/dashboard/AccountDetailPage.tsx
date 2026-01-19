@@ -25,6 +25,7 @@ const AccountDetailPage: React.FC = () => {
     currency: 'USD',
     status: 'Active'
   }
+  l
   // Dummy transaction data
   const transactions = [
     {
