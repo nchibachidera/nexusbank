@@ -48,7 +48,7 @@ const SignupPage: React.FC = () => {
           {step === 2 && 'Secure your account'}
           {step === 3 && 'Add details'}
         </h2>
-l
+
         {/* Progress indicator */}
         <div className="flex justify-between mb-6">
           {[1, 2, 3].map((s) => (
