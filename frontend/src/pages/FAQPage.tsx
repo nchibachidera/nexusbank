@@ -37,6 +37,7 @@ const categories = [
   "Loans & Mortgages",
   "Fees & Charges"
 ]
+k
 // FAQ Data
 const faqData = [
   {
