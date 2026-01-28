@@ -26,7 +26,7 @@ type AuthContextType = {
   logout: () => void
   error: string | null
 }
-j
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const useAuth = () => {
