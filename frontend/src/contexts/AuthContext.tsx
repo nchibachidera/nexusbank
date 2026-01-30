@@ -9,7 +9,7 @@ type User = {
   fullName: string
   email: string
 }
-k
+
 // Context type
 type AuthContextType = {
   user: User | null
