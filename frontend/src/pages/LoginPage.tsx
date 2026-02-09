@@ -18,7 +18,7 @@ const LoginPage = () => {
       [name]: type === 'checkbox' ? checked : value,
     }))
   }
-  h
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await login(formData.email, formData.password)
