@@ -23,7 +23,7 @@ const LoginPage = () => {
     e.preventDefault()
     await login(formData.email, formData.password)
   }
-  k
+  
   return (
     <div className="w-full min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
