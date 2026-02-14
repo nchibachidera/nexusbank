@@ -13,6 +13,7 @@ const jobListings = [
     posted: "3 days ago"
   },
   {
+    d
     id: 2,
     title: "Customer Service Representative",
     department: "Operations",
