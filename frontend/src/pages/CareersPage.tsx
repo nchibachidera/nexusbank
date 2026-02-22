@@ -4,6 +4,7 @@ import Button from '../components/Button'
 // Job listings data
 const jobListings = [
   {
+    d
     id: 1,
     title: "Senior Software Engineer",
     department: "Technology",
