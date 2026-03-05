@@ -3,7 +3,6 @@ import { ShieldCheckIcon, BarChartIcon, UsersIcon, AwardIcon, BuildingIcon, Tren
 import Button from '../components/Button'
 const AboutPage = () => {
   return (
-    h
     <div className="w-full">
       {/* Hero Section */}
       <section className="bg-blue-900 text-white py-20">
