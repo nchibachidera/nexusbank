@@ -13,7 +13,7 @@ const SignupPage: React.FC = () => {
     phone: '',
     dateOfBirth: ''
   })
-d
+
   const { signup, isLoading, error } = useAuth()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
