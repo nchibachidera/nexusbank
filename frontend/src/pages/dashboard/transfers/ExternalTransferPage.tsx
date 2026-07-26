@@ -69,7 +69,7 @@ const ExternalTransferPage = () => {
     if (value.length >= 10) {
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch(`http://localhost:5000/api/transactions/lookup/${value}`, {
+        const res = await fetch(`https://nexusbank-production-eb84.up.railway.app/api/transactions/lookup/${value}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const data = await res.json()
