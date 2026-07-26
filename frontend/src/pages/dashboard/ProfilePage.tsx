@@ -2,27 +2,30 @@ import React, { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { UserIcon, MailIcon, PhoneIcon, MapPinIcon, CameraIcon, CheckIcon } from 'lucide-react'
 import Button from '../../components/Button'
+
 const ProfilePage = () => {
   const { user } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
+    firstName: user?.fullName?.split(' ')[0] || '',
+    lastName: user?.fullName?.split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    country: 'United States',
-    dateOfBirth: '1985-05-15'
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    dateOfBirth: ''
   })
   const [successMessage, setSuccessMessage] = useState('')
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -33,17 +36,14 @@ const ProfilePage = () => {
       reader.readAsDataURL(file)
     }
   }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate API call
-    setTimeout(() => {
-      setIsEditing(false)
-      setSuccessMessage('Profile updated successfully')
-      setTimeout(() => {
-        setSuccessMessage('')
-      }, 3000)
-    }, 1000)
+    setIsEditing(false)
+    setSuccessMessage('Profile updated successfully')
+    setTimeout(() => setSuccessMessage(''), 3000)
   }
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
@@ -57,22 +57,21 @@ const ProfilePage = () => {
         </div>
       )}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Profile Header */}
         <div className="bg-blue-600 h-32 relative"></div>
         <div className="px-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end -mt-16 mb-6">
             <div className="relative h-32 w-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden">
-              <img 
-                src={profileImage || user?.avatar || "https://via.placeholder.com/128"} 
-                alt={user?.name || "Profile"} 
+              <img
+                src={profileImage || "https://via.placeholder.com/128"}
+                alt={user?.fullName || "Profile"}
                 className="h-full w-full object-cover"
               />
               {isEditing && (
                 <label className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer">
                   <CameraIcon size={24} className="text-white" />
-                  <input 
-                    type="file" 
-                    className="sr-only" 
+                  <input
+                    type="file"
+                    className="sr-only"
                     accept="image/*"
                     onChange={handleImageChange}
                   />
@@ -81,13 +80,13 @@ const ProfilePage = () => {
             </div>
             <div className="mt-4 sm:mt-0 sm:ml-4 flex-grow">
               <h2 className="text-2xl font-bold text-gray-900">
-                {isEditing ? `${formData.firstName} ${formData.lastName}` : user?.name}
+                {user?.fullName}
               </h2>
               <p className="text-gray-600">{user?.email}</p>
             </div>
             {!isEditing && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="mt-4 sm:mt-0"
                 onClick={() => setIsEditing(true)}
               >
@@ -100,17 +99,9 @@ const ProfilePage = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <div className="flex items-center">
                       <UserIcon size={18} className="text-gray-400 mr-2" />
@@ -119,17 +110,9 @@ const ProfilePage = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <div className="flex items-center">
                       <UserIcon size={18} className="text-gray-400 mr-2" />
@@ -138,17 +121,9 @@ const ProfilePage = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                   {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <div className="flex items-center">
                       <MailIcon size={18} className="text-gray-400 mr-2" />
@@ -157,38 +132,22 @@ const ProfilePage = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   {isEditing ? (
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <div className="flex items-center">
                       <PhoneIcon size={18} className="text-gray-400 mr-2" />
-                      <p>{formData.phone}</p>
+                      <p>{formData.phone || 'Not set'}</p>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
                   {isEditing ? (
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
-                    <p>{new Date(formData.dateOfBirth).toLocaleDateString()}</p>
+                    <p>{formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : 'Not set'}</p>
                   )}
                 </div>
               </div>
@@ -197,106 +156,61 @@ const ProfilePage = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Street Address
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <div className="flex items-center">
                       <MapPinIcon size={18} className="text-gray-400 mr-2" />
-                      <p>{formData.address}</p>
+                      <p>{formData.address || 'Not set'}</p>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="city" value={formData.city} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
-                    <p>{formData.city}</p>
+                    <p>{formData.city || 'Not set'}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State/Province
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="state" value={formData.state} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
-                    <p>{formData.state}</p>
+                    <p>{formData.state || 'Not set'}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ZIP/Postal Code
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP/Postal Code</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
-                    <p>{formData.zipCode}</p>
+                    <p>{formData.zipCode || 'Not set'}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Country
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                   {isEditing ? (
-                    <select
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                    <select name="country" value={formData.country} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">Select country</option>
+                      <option value="Nigeria">Nigeria</option>
                       <option value="United States">United States</option>
                       <option value="Canada">Canada</option>
                       <option value="United Kingdom">United Kingdom</option>
                       <option value="Australia">Australia</option>
                     </select>
                   ) : (
-                    <p>{formData.country}</p>
+                    <p>{formData.country || 'Not set'}</p>
                   )}
                 </div>
               </div>
             </div>
             {isEditing && (
               <div className="flex justify-end space-x-3 mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Save Changes
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit">Save Changes</Button>
               </div>
             )}
           </form>
@@ -305,4 +219,5 @@ const ProfilePage = () => {
     </div>
   )
 }
+
 export default ProfilePage
