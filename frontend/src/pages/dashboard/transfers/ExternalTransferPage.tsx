@@ -20,7 +20,9 @@ const ExternalTransferPage = () => {
   const [success, setSuccess] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [fetchingAccounts, setFetchingAccounts] = useState(true)
-  
+  const [lookupName, setLookupName] = useState<string | null>(null)
+  const [lookupError, setLookupError] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     fromAccountId: '',
     recipientName: '',
@@ -35,16 +37,13 @@ const ExternalTransferPage = () => {
       setFetchingAccounts(true)
       try {
         const response = await getAccounts()
-        console.log('Accounts response:', response)
         const accountsData = response.data?.accounts || response.data || []
         if (Array.isArray(accountsData)) {
           setAccounts(accountsData)
         } else {
-          console.error('Accounts is not an array:', accountsData)
           setAccounts([])
         }
       } catch (err: any) {
-        console.error('Error fetching accounts:', err)
         setError(err.response?.data?.message || 'Failed to load accounts. Please try again.')
         setAccounts([])
       } finally {
@@ -61,11 +60,35 @@ const ExternalTransferPage = () => {
     })
   }
 
+  const handleAccountNumberChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim()
+    setFormData(prev => ({ ...prev, recipientAccountNumber: value }))
+    setLookupName(null)
+    setLookupError(null)
+
+    if (value.length >= 10) {
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`http://localhost:5000/api/transactions/lookup/${value}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.accountName) {
+          setLookupName(data.accountName)
+          setFormData(prev => ({ ...prev, recipientName: data.accountName }))
+        } else {
+          setLookupError('Account not found')
+        }
+      } catch (err) {
+        setLookupError('Account not found')
+      }
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    // Validation
     if (!formData.fromAccountId || !formData.recipientAccountNumber || !formData.amount || !formData.recipientName) {
       setError('Please fill in all required fields')
       return
@@ -91,13 +114,13 @@ const ExternalTransferPage = () => {
     setError('')
 
     try {
-      const description = formData.description || 
+      const description = formData.description ||
         `External transfer to ${formData.recipientName} at ${formData.recipientBankName || 'External Bank'}`
 
       await createTransaction({
         transactionType: 'transfer',
         accountId: formData.fromAccountId,
-        toAccountNumber: formData.recipientAccountNumber,
+        toAccountNumber: formData.recipientAccountNumber.trim(),
         amount: parseFloat(formData.amount),
         description
       })
@@ -118,7 +141,6 @@ const ExternalTransferPage = () => {
 
   const fromAccount = accounts.find(acc => acc.id === formData.fromAccountId)
 
-  // Loading state
   if (fetchingAccounts) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -164,7 +186,6 @@ const ExternalTransferPage = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <button
           onClick={() => navigate('/dashboard')}
@@ -182,7 +203,6 @@ const ExternalTransferPage = () => {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center text-red-800">
@@ -192,10 +212,8 @@ const ExternalTransferPage = () => {
         </div>
       )}
 
-      {/* Transfer Form */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* From Account */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               From Account *
@@ -216,7 +234,6 @@ const ExternalTransferPage = () => {
             </select>
           </div>
 
-          {/* Available Balance Display */}
           {fromAccount && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600">Available Balance</p>
@@ -224,28 +241,10 @@ const ExternalTransferPage = () => {
             </div>
           )}
 
-          {/* Recipient Information */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recipient Information</h3>
-            
-            <div className="space-y-4">
-              {/* Recipient Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Recipient Name *
-                </label>
-                <input
-                  type="text"
-                  name="recipientName"
-                  value={formData.recipientName}
-                  onChange={handleChange}
-                  placeholder="Enter recipient full name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  required
-                />
-              </div>
 
-              {/* Account Number */}
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Account Number *
@@ -254,14 +253,19 @@ const ExternalTransferPage = () => {
                   type="text"
                   name="recipientAccountNumber"
                   value={formData.recipientAccountNumber}
-                  onChange={handleChange}
+                  onChange={handleAccountNumberChange}
                   placeholder="Enter recipient account number"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   required
                 />
+                {lookupName && (
+                  <p className="mt-1 text-sm text-green-600 font-medium">✓ {lookupName}</p>
+                )}
+                {lookupError && (
+                  <p className="mt-1 text-sm text-red-600">{lookupError}</p>
+                )}
               </div>
 
-              {/* Bank Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Bank Name
@@ -278,11 +282,9 @@ const ExternalTransferPage = () => {
             </div>
           </div>
 
-          {/* Transfer Details */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Transfer Details</h3>
-            
-            {/* Amount */}
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Amount *
@@ -303,7 +305,6 @@ const ExternalTransferPage = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description (Optional)
@@ -319,7 +320,6 @@ const ExternalTransferPage = () => {
             </div>
           </div>
 
-          {/* Info Box */}
           <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
             <h4 className="text-sm font-medium text-yellow-800 mb-2">⚠️ External Transfer Notice</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
@@ -330,7 +330,6 @@ const ExternalTransferPage = () => {
             </ul>
           </div>
 
-          {/* Submit Button */}
           <div className="flex space-x-4">
             <button
               type="submit"
@@ -357,7 +356,6 @@ const ExternalTransferPage = () => {
         </form>
       </div>
 
-      {/* Confirmation Modal */}
       {showConfirmation && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
@@ -367,21 +365,15 @@ const ExternalTransferPage = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">From Account:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {fromAccount?.accountType}
-                  </span>
+                  <span className="text-sm font-medium text-gray-900">{fromAccount?.accountType}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">To:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formData.recipientName}
-                  </span>
+                  <span className="text-sm font-medium text-gray-900">{formData.recipientName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Account Number:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formData.recipientAccountNumber}
-                  </span>
+                  <span className="text-sm font-medium text-gray-900">{formData.recipientAccountNumber}</span>
                 </div>
                 {formData.recipientBankName && (
                   <div className="flex justify-between">
@@ -391,9 +383,7 @@ const ExternalTransferPage = () => {
                 )}
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Amount:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    ${parseFloat(formData.amount).toFixed(2)}
-                  </span>
+                  <span className="text-sm font-medium text-gray-900">${parseFloat(formData.amount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Fee:</span>

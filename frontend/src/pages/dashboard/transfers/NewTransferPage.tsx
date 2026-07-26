@@ -38,6 +38,8 @@ const NewTransferPage = () => {
   const [isComplete, setIsComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [transactionRef, setTransactionRef] = useState('')
+  const [lookupName, setLookupName] = useState<string | null>(null)
+  const [lookupError, setLookupError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -56,6 +58,31 @@ const NewTransferPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const handleAccountNumberChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setFormData(prev => ({ ...prev, recipientAccountNumber: value }))
+    setLookupName(null)
+    setLookupError(null)
+
+    if (value.length >= 10) {
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`http://localhost:5000/api/transactions/lookup/${value}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.accountName) {
+          setLookupName(data.accountName)
+          setFormData(prev => ({ ...prev, recipientName: data.accountName }))
+        } else {
+          setLookupError('Account not found')
+        }
+      } catch (err) {
+        setLookupError('Account not found')
+      }
+    }
+  }
+
   const handleBeneficiarySelect = (id: string) => {
     if (selectedBeneficiary === id) {
       setSelectedBeneficiary(null)
@@ -66,6 +93,8 @@ const NewTransferPage = () => {
         recipientAccountNumber: '',
         recipientBankName: ''
       }))
+      setLookupName(null)
+      setLookupError(null)
     } else {
       setSelectedBeneficiary(id)
       const beneficiary = recentBeneficiaries.find(b => b.id === id)
@@ -77,6 +106,8 @@ const NewTransferPage = () => {
           recipientAccountNumber: beneficiary.accountNumber,
           recipientBankName: beneficiary.bankName
         }))
+        setLookupName(beneficiary.name)
+        setLookupError(null)
       }
     }
   }
@@ -91,12 +122,11 @@ const NewTransferPage = () => {
       setIsSubmitting(true)
       
       try {
-        // Create the transfer transaction - send account number to backend
         await createTransaction({
           transactionType: 'transfer',
           amount: parseFloat(formData.amount),
           accountId: formData.fromAccount,
-          toAccountNumber: formData.recipientAccountNumber,  // Send account number instead of ID
+          toAccountNumber: formData.recipientAccountNumber,
           description: formData.reference || `Transfer to ${formData.recipientName}`
         })
 
@@ -127,6 +157,8 @@ const NewTransferPage = () => {
     setSelectedBeneficiary(null)
     setIsComplete(false)
     setError(null)
+    setLookupName(null)
+    setLookupError(null)
   }
 
   if (isComplete) {
@@ -267,45 +299,23 @@ const NewTransferPage = () => {
                 <>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Recipient Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="recipientName"
-                      value={formData.recipientName}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter recipient name"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Account Number*
                     </label>
                     <input
                       type="text"
                       name="recipientAccountNumber"
                       value={formData.recipientAccountNumber}
-                      onChange={handleChange}
+                      onChange={handleAccountNumberChange}
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter account number"
                     />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bank Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="recipientBankName"
-                      value={formData.recipientBankName}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter bank name"
-                    />
+                    {lookupName && (
+                      <p className="mt-1 text-sm text-green-600 font-medium">✓ {lookupName}</p>
+                    )}
+                    {lookupError && (
+                      <p className="mt-1 text-sm text-red-600">{lookupError}</p>
+                    )}
                   </div>
                 </>
               )}

@@ -156,7 +156,7 @@ export const createTransaction = async (req, res) => {
       await t.rollback();
       return res.status(404).json({ message: 'Account not found' });
     }
-    l
+    
     // Handle different transaction types
     if (transactionType === 'transfer') {
       console.log(' Processing transfer...');
@@ -331,7 +331,9 @@ export const createTransaction = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 
-  export const lookupAccount = async (req, res) => {
+};
+
+export const lookupAccount = async (req, res) => {
   try {
     const { accountNumber } = req.params;
 
@@ -357,5 +359,4 @@ export const createTransaction = async (req, res) => {
     console.error('Error looking up account:', err);
     res.status(500).json({ message: 'Server error' });
   }
-};
 };
