@@ -1,4 +1,4 @@
-import { Transaction, Account, Notification } from '../models/index.js';
+import { Transaction, Account, Notification, User } from '../models/index.js';
 import { Op } from 'sequelize';
 import { sequelize } from '../models/index.js';
 
@@ -330,4 +330,32 @@ export const createTransaction = async (req, res) => {
     console.error('Error stack:', err.stack);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
+
+  export const lookupAccount = async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+
+    const account = await Account.findOne({
+      where: { accountNumber }
+    });
+
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    const user = await User.findOne({
+      where: { id: account.userId },
+      attributes: ['fullName']
+    });
+
+    return res.json({
+      accountNumber: account.accountNumber,
+      accountName: user.fullName
+    });
+
+  } catch (err) {
+    console.error('Error looking up account:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 };

@@ -3,7 +3,8 @@ import {
   getTransactions, 
   getTransactionById,
   getTransactionsByAccount, 
-  createTransaction 
+  createTransaction,
+  lookupAccount
 } from '../controllers/transactionController.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 
@@ -27,5 +28,7 @@ router.get('/:id', authenticate, getTransactionById);
 
 // Create a new transaction (transfer, deposit, withdraw)
 router.post('/', authenticate, createTransaction);
+
+router.get('/lookup/:accountNumber', authenticate, lookupAccount);
 
 export default router;
