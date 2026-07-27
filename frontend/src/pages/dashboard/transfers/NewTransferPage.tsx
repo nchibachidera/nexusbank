@@ -7,7 +7,7 @@ import { createTransaction } from '../../../api/transactionApi'
 
 interface Account {
   id: string
-  accountNumber: strin
+  accountNumber: string
   accountType: string
   balance: number
 }
