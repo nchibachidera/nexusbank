@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 const API: AxiosInstance = axios.create({
-  baseURL: "https://nexusbank-production-eb84.up.railway.app/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
 // Attach JWT token automatically if exists
